@@ -159,3 +159,13 @@ atomic. Unrelated controllers, including Worker Script and Version, are unchange
 
 The adapter is tested against the actual Upjet v2.5.1 workspace producer. It does
 not change Crossplane/Upjet dependencies or the existing deletion/restart limits.
+
+Access service tokens return a computed `client_secret_version` even when no
+rotation was requested. Late initialization excludes that field in both API
+scopes: sending the returned version back as configuration requires a
+`previous_client_secret_expires_at` value and otherwise blocks the next refresh.
+Explicit rotations can still configure both inputs. If an earlier controller
+already copied the version into `spec.forProvider.clientSecretVersion`, remove
+only that automatically populated field after installing the corrected package.
+Keep the existing external identifier and connection Secret so the same token
+continues to reconcile.
