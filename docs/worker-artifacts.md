@@ -142,3 +142,20 @@ duplicate paths and paths escaping the bundle are rejected. The reserved
 This feature covers Workers and Workers Static Assets. It does not implement the
 separate Cloudflare Pages content-deployment API or select environment DNS,
 Cloudflare Access policies, VPC bindings or public ingress automatically.
+
+## ID-based resources used by private previews
+
+The private Gateway pilot also uses Access service tokens/applications, Tunnels
+and Connectivity Directory services. Their native reads require a server-issued
+ID. Upjet's initial synthetic state contains an empty ID, which makes the native
+read fail before creation (for example, `missing required service_token_id`).
+
+These four controllers use a provider-local workspace adapter. For an uncreated,
+unobserved managed resource, it removes only the single matching empty-ID
+synthetic instance before refresh. State lineage and resource identity must match.
+Known IDs, adopted resources, running operations, deleting resources and observed
+resources retain the normal path. State metadata is preserved and writes are
+atomic. Unrelated controllers, including Worker Script and Version, are unchanged.
+
+The adapter is tested against the actual Upjet v2.5.1 workspace producer. It does
+not change Crossplane/Upjet dependencies or the existing deletion/restart limits.
