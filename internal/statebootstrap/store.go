@@ -47,15 +47,45 @@ func (s *Store) Workspace(ctx context.Context, client resource.SecretClient, tr 
 	}
 	// This is Upjet v2.5.1's workspace location (tested using the actual store).
 	// The immutable server-assigned UID identifies the directory and state lineage.
-	uid := string(tr.GetUID())
-	if uid == "" || strings.ContainsAny(uid, `/\`) || filepath.Base(uid) != uid || uid == "." || uid == ".." {
-		return nil, fmt.Errorf("invalid workspace UID")
+	dir, err := workspaceDirectory(s.fs, string(tr.GetUID()))
+	if err != nil {
+		return nil, err
 	}
-	dir := filepath.Join(s.fs.GetTempDir(""), uid)
 	if err := clearSyntheticState(s.fs, dir, tr); err != nil {
 		return nil, err
 	}
 	return w, nil
+}
+
+func workspaceDirectory(fs afero.Afero, uid string) (string, error) {
+	if uid == "" || strings.ContainsAny(uid, `/\`) || filepath.Base(uid) != uid || uid == "." || uid == ".." {
+		return "", fmt.Errorf("invalid workspace UID")
+	}
+	return filepath.Join(fs.GetTempDir(""), uid), nil
+}
+
+type workspaceState struct {
+	Version   int    `json:"version"`
+	Lineage   string `json:"lineage"`
+	Resources []struct {
+		Mode      string `json:"mode"`
+		Type      string `json:"type"`
+		Name      string `json:"name"`
+		Instances []struct {
+			Attributes map[string]any `json:"attributes"`
+		} `json:"instances"`
+	} `json:"resources"`
+}
+
+func (s workspaceState) validate(tr resource.Terraformed) error {
+	if s.Version != 4 || s.Lineage != string(tr.GetUID()) || len(s.Resources) != 1 {
+		return fmt.Errorf("unexpected workspace state identity")
+	}
+	r := s.Resources[0]
+	if r.Mode != "managed" || r.Type != tr.GetTerraformResourceType() || r.Name != tr.GetName() || len(r.Instances) != 1 {
+		return fmt.Errorf("unexpected workspace resource identity")
+	}
+	return nil
 }
 
 func clearSyntheticState(fs afero.Afero, dir string, tr resource.Terraformed) error {
@@ -67,46 +97,39 @@ func clearSyntheticState(fs afero.Afero, dir string, tr resource.Terraformed) er
 	if err != nil {
 		return err
 	}
-	var state struct {
-		Version   int    `json:"version"`
-		Lineage   string `json:"lineage"`
-		Resources []struct {
-			Mode      string `json:"mode"`
-			Type      string `json:"type"`
-			Name      string `json:"name"`
-			Instances []struct {
-				Attributes map[string]any `json:"attributes"`
-			} `json:"instances"`
-		} `json:"resources"`
+	next, err := withoutSyntheticInstance(raw, tr)
+	if err != nil || next == nil {
+		return err
 	}
+	return atomicReplace(fs, dir, path, next)
+}
+
+func withoutSyntheticInstance(raw []byte, tr resource.Terraformed) ([]byte, error) {
+	var state workspaceState
 	if err := json.Unmarshal(raw, &state); err != nil {
-		return fmt.Errorf("invalid workspace state")
+		return nil, fmt.Errorf("invalid workspace state")
 	}
 	if len(state.Resources) == 0 {
-		return nil
+		return nil, nil
 	}
-	if state.Version != 4 || state.Lineage != string(tr.GetUID()) || len(state.Resources) != 1 {
-		return fmt.Errorf("unexpected workspace state identity")
-	}
-	r := state.Resources[0]
-	if r.Mode != "managed" || r.Type != tr.GetTerraformResourceType() || r.Name != tr.GetName() || len(r.Instances) != 1 {
-		return fmt.Errorf("unexpected workspace resource identity")
+	if err := state.validate(tr); err != nil {
+		return nil, err
 	}
 	// Never alter an instance with a real ID, including an apply whose result has
 	// not yet been copied into Kubernetes annotations/status.
-	id, exists := r.Instances[0].Attributes["id"]
+	id, exists := state.Resources[0].Instances[0].Attributes["id"]
 	if !exists || id != "" {
-		return nil
+		return nil, nil
 	}
 	var document map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &document); err != nil {
-		return fmt.Errorf("invalid workspace document")
+		return nil, fmt.Errorf("invalid workspace document")
 	}
 	document["resources"] = json.RawMessage("[]")
-	next, err := json.Marshal(document)
-	if err != nil {
-		return err
-	}
+	return json.Marshal(document)
+}
+
+func atomicReplace(fs afero.Afero, dir, path string, next []byte) error {
 	file, err := afero.TempFile(fs.Fs, dir, ".state-bootstrap-")
 	if err != nil {
 		return err
