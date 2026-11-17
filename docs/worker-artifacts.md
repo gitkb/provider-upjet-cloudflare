@@ -134,6 +134,14 @@ provider supplies a minimal inline module only to satisfy native configuration
 validation during refresh/destroy; the managed deletion path never uploads it. Normal
 Cloudflare credentials and the resource's management/deletion policy still apply.
 
+Controller replacement while a Script is already deleting is not restart-safe:
+Upjet skips Terraform-state reconstruction during deletion, and the managed
+resource may disappear while its remote Worker remains. The live synthetic test
+reproduced this limit. Keep the controller running through normal deletion,
+verify the Worker is absent in Cloudflare afterward, and remove a confirmed
+orphan manually if necessary. Cache-independent deletion does not establish
+restart-safe deletion.
+
 Archives accept regular files and directories, with at most 10,000 entries,
 128 MiB compressed and 256 MiB expanded. Symlinks, hard links, device files,
 duplicate paths and paths escaping the bundle are rejected. The reserved
