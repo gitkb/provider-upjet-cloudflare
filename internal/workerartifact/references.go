@@ -43,5 +43,9 @@ func (r *scriptReferenceResolver) ResolveReferences(ctx context.Context, mg xpre
 	// A merge patch retains earlier reference updates and Secret selectors; the
 	// version precondition prevents overwriting concurrent GitOps changes.
 	patch := client.MergeFromWithOptions(before, client.MergeFromWithOptimisticLock{})
+	// The API response contains no controller-local attachment. Keep the bundle
+	// prepared by the initializer for the connector that runs after this update.
+	files := artifact.GetWorkerArtifactFiles()
+	defer artifact.SetWorkerArtifactFiles(files)
 	return r.kube.Patch(ctx, mg, patch, client.FieldOwner("cloudflare-worker-artifact-references"))
 }

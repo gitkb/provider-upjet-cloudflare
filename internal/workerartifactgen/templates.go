@@ -54,6 +54,8 @@ func Configure() {
 {{ if ` + tfCondition + ` }}
 // GetWorkerArtifact returns the optional immutable bundle selection.
 func (tr *{{ .CRD.Kind }}) GetWorkerArtifact() *workerartifact.Source { return tr.Spec.Artifact }
+// GetWorkerArtifactFiles returns the controller-local bundle attachment.
+func (tr *{{ .CRD.Kind }}) GetWorkerArtifactFiles() *workerartifact.Files { return tr.Spec.ArtifactFiles }
 // SetWorkerArtifactFiles attaches controller-local files without persisting paths.
 func (tr *{{ .CRD.Kind }}) SetWorkerArtifactFiles(files *workerartifact.Files) { tr.Spec.ArtifactFiles = files }
 // SetResolvedWorkerArtifact records which immutable bundle was fetched.

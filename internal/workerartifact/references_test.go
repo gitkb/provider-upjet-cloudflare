@@ -23,9 +23,10 @@ import (
 
 type referencePatchClient struct {
 	client.Client
-	types     []types.PatchType
-	documents []map[string]any
-	patchErr  error
+	types             []types.PatchType
+	documents         []map[string]any
+	patchErr          error
+	discardLocalFiles bool
 }
 
 func (c *referencePatchClient) Patch(ctx context.Context, object client.Object, patch client.Patch, options ...client.PatchOption) error {
@@ -45,7 +46,13 @@ func (c *referencePatchClient) Patch(ctx context.Context, object client.Object, 
 	if patch.Type() == types.ApplyPatchType {
 		return nil // The fake client does not implement server-side apply ownership.
 	}
-	return c.Client.Patch(ctx, object, patch, options...)
+	if err := c.Client.Patch(ctx, object, patch, options...); err != nil {
+		return err
+	}
+	if c.discardLocalFiles {
+		object.(Resource).SetWorkerArtifactFiles(nil)
+	}
+	return nil
 }
 
 func referenceFixture(t *testing.T) (*scriptapi.Script, *referencePatchClient) {
@@ -77,12 +84,18 @@ func referenceFixture(t *testing.T) (*scriptapi.Script, *referencePatchClient) {
 
 func TestArtifactReferenceUpdatesKeepBindingSources(t *testing.T) {
 	cr, kube := referenceFixture(t)
+	files := &api.Files{Root: t.TempDir()}
+	cr.Spec.ArtifactFiles = files
+	kube.discardLocalFiles = true
 	resolver := NewReferenceResolver(kube)
 	if err := resolver.ResolveReferences(t.Context(), cr); err != nil {
 		t.Fatal(err)
 	}
 	if kube.types[0] != types.MergePatchType || kube.documents[0]["metadata"].(map[string]any)["resourceVersion"] != "7" {
 		t.Fatal("reference update lacks merge semantics or optimistic locking")
+	}
+	if cr.Spec.ArtifactFiles != files {
+		t.Fatal("reference update lost the bundle needed by the connector")
 	}
 	// Re-resolving only the name must retain the earlier binding update.
 	cr.Spec.ForProvider.ScriptName = nil
@@ -91,6 +104,9 @@ func TestArtifactReferenceUpdatesKeepBindingSources(t *testing.T) {
 	}
 	if kube.types[1] != types.MergePatchType {
 		t.Fatal("later reference update changed patch semantics")
+	}
+	if cr.Spec.ArtifactFiles != files {
+		t.Fatal("later reference update lost the controller-local bundle")
 	}
 	stored := &scriptapi.Script{}
 	if err := kube.Get(t.Context(), client.ObjectKeyFromObject(cr), stored); err != nil {

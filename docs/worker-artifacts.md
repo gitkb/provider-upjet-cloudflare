@@ -173,7 +173,9 @@ continues to reconcile.
 Artifact-backed Scripts resolve references using incremental merge patches with
 a resource-version precondition. This preserves binding Secret selectors and
 earlier resolved fields when a later reference changes, without overwriting
-concurrent GitOps edits. The normal reference resolver remains selected for
+concurrent GitOps edits. Reference updates also retain the controller-local
+bundle attachment prepared by the initializer, because it is intentionally
+absent from API responses. The normal reference resolver remains selected for
 Scripts without an artifact; other controllers are unchanged. The implementation
 uses the managed reconciler's reference-resolver extension point and changes no
 Crossplane or Upjet dependencies. If an earlier controller removed binding
