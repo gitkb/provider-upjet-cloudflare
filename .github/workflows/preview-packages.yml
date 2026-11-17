@@ -7,6 +7,7 @@ on:
       - 'go.mod'
       - 'go.sum'
       - 'Makefile'
+      - 'build'
       - 'build/**'
       - 'patches/**'
       - 'cluster/images/provider-upjet-cloudflare/**'
@@ -42,6 +43,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           persist-credentials: false
+          submodules: true
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
         with:
           go-version: '1.26.8'
@@ -76,8 +78,15 @@ jobs:
         run: |
           set -euo pipefail
           repository=gitkb/provider-upjet-cloudflare
-          aws ecr describe-repositories --repository-names "$repository" --region us-east-2 >/dev/null 2>&1 || \
-            aws ecr create-repository --repository-name "$repository" --region us-east-2 --image-scanning-configuration scanOnPush=true >/dev/null
+          if ! aws ecr describe-repositories --repository-names "$repository" --region us-east-2 >/dev/null 2>&1; then
+            if ! result="$(aws ecr create-repository --repository-name "$repository" --region us-east-2 --image-scanning-configuration scanOnPush=true 2>&1)"; then
+              if [[ "$result" != *"(RepositoryAlreadyExistsException)"* ]]; then
+                printf '%s\n' "$result" >&2
+                exit 1
+              fi
+              aws ecr describe-repositories --repository-names "$repository" --region us-east-2 >/dev/null
+            fi
+          fi
           aws ecr get-login-password --region us-east-2 | docker login "$ECR_REGISTRY" --username AWS --password-stdin
           target="$ECR_REGISTRY/$repository:$GROUP-pr-${HEAD_SHA}"
           /tmp/crossplane xpkg push -f "_output/xpkg/linux_amd64/provider-cloudflare-$GROUP-v1.0.4-preview.$HEAD_SHA.xpkg" "$target"

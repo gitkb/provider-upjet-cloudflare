@@ -7,6 +7,7 @@ import (
 	ujconfig "github.com/crossplane/upjet/v2/pkg/config"
 
 	"github.com/wildbitca/provider-upjet-cloudflare/hack"
+	"github.com/wildbitca/provider-upjet-cloudflare/internal/workeraccess"
 
 	accountCluster "github.com/wildbitca/provider-upjet-cloudflare/config/cluster/account"
 	addressCluster "github.com/wildbitca/provider-upjet-cloudflare/config/cluster/address"
@@ -83,6 +84,7 @@ func GetProviderNamespaced() *ujconfig.Provider {
 		dnsNamespaced.Configure,
 		accountNamespaced.Configure,
 		previewNamespaced.Configure,
+		configureWorkerAccess,
 		zeroNamespaced.Configure,
 		secretsstoreNamespaced.Configure,
 		streamNamespaced.Configure,
@@ -92,4 +94,13 @@ func GetProviderNamespaced() *ujconfig.Provider {
 
 	pc.ConfigureResources()
 	return pc
+}
+
+// configureWorkerAccess runs before reference resolution and Cloudflare reconciliation.
+func configureWorkerAccess(p *ujconfig.Provider) {
+	for _, name := range []string{"cloudflare_workers_script", "cloudflare_workers_script_subdomain"} {
+		p.AddResourceConfigurator(name, func(r *ujconfig.Resource) {
+			r.InitializerFns = append(r.InitializerFns, workeraccess.NewInitializer)
+		})
+	}
 }

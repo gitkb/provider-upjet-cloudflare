@@ -11,7 +11,7 @@ import (
 
 func TestWorkerEndpointRequiresReadyAccessPolicy(t *testing.T) {
 	app := &zero.TrustAccessApplication{}
-	if err := app.SetObservation(map[string]any{"domain": "gateway-pr-201.hi-f3c.workers.dev"}); err != nil {
+	if err := app.SetObservation(map[string]any{"domain": "gateway-pr-201.hi-f3c.workers.dev", "policies": []any{map[string]any{"decision": "non_identity", "include": []any{map[string]any{"service_token": map[string]any{"token_id": "relay"}}}}}}); err != nil {
 		t.Fatal(err)
 	}
 	extract := preview.AccessWorkerName()
@@ -23,7 +23,7 @@ func TestWorkerEndpointRequiresReadyAccessPolicy(t *testing.T) {
 		t.Fatalf("wrong Worker name: %q", got)
 	}
 	for _, domain := range []string{"*.hi-f3c.workers.dev", "gateway.example.com", "gateway.hi-f3c.workers.dev/path"} {
-		if err := app.SetObservation(map[string]any{"domain": domain}); err != nil {
+		if err := app.SetObservation(map[string]any{"domain": domain, "policies": []any{map[string]any{"decision": "non_identity", "include": []any{map[string]any{"service_token": map[string]any{"token_id": "relay"}}}}}}); err != nil {
 			t.Fatal(err)
 		}
 		if got := extract(app); got != "" {
