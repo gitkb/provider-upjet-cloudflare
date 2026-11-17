@@ -74,7 +74,7 @@ func referenceFixture(t *testing.T) (*scriptapi.Script, *referencePatchClient) {
 	cr.Spec.Artifact = &api.Source{Ref: "registry.example/worker@sha256:" + strings.Repeat("a", 64)}
 	dir := &connectivity.DirectoryService{ObjectMeta: metav1.ObjectMeta{Name: "origin", Namespace: "preview", Annotations: map[string]string{"crossplane.io/external-name": "service-v1"}}}
 	app := &zero.TrustAccessApplication{ObjectMeta: metav1.ObjectMeta{Name: "access", Namespace: "preview"}}
-	if err := app.SetObservation(map[string]any{"domain": "gateway.hi-f3c.workers.dev"}); err != nil {
+	if err := app.SetObservation(map[string]any{"domain": "gateway.hi-f3c.workers.dev", "policies": []any{map[string]any{"decision": "non_identity", "include": []any{map[string]any{"service_token": map[string]any{"token_id": "relay"}}}}}}); err != nil {
 		t.Fatal(err)
 	}
 	app.SetConditions(xpv2.Available(), xpv2.ReconcileSuccess())

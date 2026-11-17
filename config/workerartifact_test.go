@@ -43,7 +43,11 @@ func TestWorkerArtifactsReachRealUpjetFileProducer(t *testing.T) {
 				provider = GetProviderNamespaced()
 			}
 			cfg := provider.Resources[tc.tr.GetTerraformResourceType()]
-			if len(cfg.InitializerFns) != 1 {
+			wantInitializers := 1
+			if tc.namespaced {
+				wantInitializers++ // Namespaced private Workers also validate Access.
+			}
+			if len(cfg.InitializerFns) != wantInitializers {
 				t.Fatal("artifact initializer not wired into resource configuration")
 			}
 			producer, err := terraform.NewFileProducer(t.Context(), noopSecrets{}, t.TempDir(), tc.tr, terraform.Setup{}, cfg)

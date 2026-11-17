@@ -73,7 +73,7 @@ var workerName = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,62}$`)
 
 func AccessWorkerName() reference.ExtractValueFn {
 	return func(mg xpresource.Managed) string {
-		if mg.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue || mg.GetCondition(xpv2.TypeSynced).Status != corev1.ConditionTrue {
+		if mg.GetDeletionTimestamp() != nil || mg.GetCondition(xpv2.TypeReady).Status != corev1.ConditionTrue || mg.GetCondition(xpv2.TypeSynced).Status != corev1.ConditionTrue {
 			return ""
 		}
 		tr, ok := mg.(resource.Terraformed)
@@ -81,7 +81,7 @@ func AccessWorkerName() reference.ExtractValueFn {
 			return ""
 		}
 		attrs, err := tr.GetObservation()
-		if err != nil {
+		if err != nil || !serviceTokenPolicies(attrs) {
 			return ""
 		}
 		domain, _ := attrs["domain"].(string)
@@ -91,4 +91,38 @@ func AccessWorkerName() reference.ExtractValueFn {
 		}
 		return parts[0]
 	}
+}
+
+// serviceTokenPolicies requires observed inline policies that admit only
+// explicit service tokens. Empty, bypass, and uninspectable policies fail closed.
+func serviceTokenPolicies(attrs map[string]any) bool {
+	policies, ok := attrs["policies"].([]any)
+	if !ok || len(policies) == 0 {
+		return false
+	}
+	for _, item := range policies {
+		policy, ok := item.(map[string]any)
+		if !ok || policy["decision"] != "non_identity" {
+			return false
+		}
+		includes, ok := policy["include"].([]any)
+		if !ok || len(includes) == 0 {
+			return false
+		}
+		for _, item := range includes {
+			rule, ok := item.(map[string]any)
+			if !ok || len(rule) != 1 {
+				return false
+			}
+			token, ok := rule["service_token"].(map[string]any)
+			if !ok {
+				return false
+			}
+			id, ok := token["token_id"].(string)
+			if !ok || id == "" {
+				return false
+			}
+		}
+	}
+	return true
 }
