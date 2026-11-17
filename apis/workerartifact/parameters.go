@@ -52,7 +52,22 @@ func ValidateInputs(p map[string]any) error {
 // Parameters injects file inputs into Terraform parameters, never into the
 // Kubernetes spec. Deletion deliberately needs neither the bundle nor registry.
 func Parameters(source *Source, files *Files, deleting bool, kind string, p map[string]any) (map[string]any, error) {
-	if source == nil || deleting {
+	if source == nil {
+		return p, nil
+	}
+	if kind != "cloudflare_workers_script" {
+		return nil, fmt.Errorf("unsupported artifact resource %q", kind)
+	}
+	if deleting {
+		// The native provider validates content/content_file/assets even during
+		// refresh and destroy. Supply a self-contained configuration without
+		// reading disposable files. The managed deletion path never uploads it.
+		for _, key := range []string{"content_file", "content_sha256", "files", "assets", "body_part", "keep_assets"} {
+			delete(p, key)
+		}
+		p["content"] = "export default {};"
+		p["content_type"] = "application/javascript+module"
+		p["main_module"] = "worker.js"
 		return p, nil
 	}
 	if err := ValidateInputs(p); err != nil {
@@ -62,12 +77,7 @@ func Parameters(source *Source, files *Files, deleting bool, kind string, p map[
 		return nil, fmt.Errorf("worker artifact has not been materialized")
 	}
 	m := files.Manifest
-	switch kind {
-	case "cloudflare_workers_script":
-		scriptParameters(files, p)
-	default:
-		return nil, fmt.Errorf("unsupported artifact resource %q", kind)
-	}
+	scriptParameters(files, p)
 	if m.Assets != "" {
 		assets, _ := p["assets"].(map[string]any)
 		if assets == nil {
