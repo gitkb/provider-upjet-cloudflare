@@ -11,6 +11,9 @@ import (
 	reference "github.com/crossplane/crossplane-runtime/v2/pkg/reference"
 	errors "github.com/pkg/errors"
 	v1alpha1 "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/account/v1alpha1"
+	v1alpha11 "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/connectivity/v1alpha1"
+	v1alpha12 "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1"
+	preview "github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -54,6 +57,99 @@ func (mg *KvNamespace) ResolveReferences(ctx context.Context, c client.Reader) e
 	}
 	mg.Spec.InitProvider.AccountID = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.InitProvider.AccountIDRef = rsp.ResolvedReference
+
+	return nil
+}
+
+// ResolveReferences of this Script.
+func (mg *Script) ResolveReferences(ctx context.Context, c client.Reader) error {
+	r := reference.NewAPINamespacedResolver(c, mg)
+
+	var rsp reference.NamespacedResolutionResponse
+	var err error
+
+	for i3 := 0; i3 < len(mg.Spec.ForProvider.Bindings); i3++ {
+		rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
+			CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Bindings[i3].ServiceID),
+			Extract:      reference.ExternalName(),
+			Namespace:    mg.GetNamespace(),
+			Reference:    mg.Spec.ForProvider.Bindings[i3].ServiceIDRef,
+			Selector:     mg.Spec.ForProvider.Bindings[i3].ServiceIDSelector,
+			To: reference.To{
+				List:    &v1alpha11.DirectoryServiceList{},
+				Managed: &v1alpha11.DirectoryService{},
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "mg.Spec.ForProvider.Bindings[i3].ServiceID")
+		}
+		mg.Spec.ForProvider.Bindings[i3].ServiceID = reference.ToPtrValue(rsp.ResolvedValue)
+		mg.Spec.ForProvider.Bindings[i3].ServiceIDRef = rsp.ResolvedReference
+
+	}
+	for i3 := 0; i3 < len(mg.Spec.InitProvider.Bindings); i3++ {
+		rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
+			CurrentValue: reference.FromPtrValue(mg.Spec.InitProvider.Bindings[i3].ServiceID),
+			Extract:      reference.ExternalName(),
+			Namespace:    mg.GetNamespace(),
+			Reference:    mg.Spec.InitProvider.Bindings[i3].ServiceIDRef,
+			Selector:     mg.Spec.InitProvider.Bindings[i3].ServiceIDSelector,
+			To: reference.To{
+				List:    &v1alpha11.DirectoryServiceList{},
+				Managed: &v1alpha11.DirectoryService{},
+			},
+		})
+		if err != nil {
+			return errors.Wrap(err, "mg.Spec.InitProvider.Bindings[i3].ServiceID")
+		}
+		mg.Spec.InitProvider.Bindings[i3].ServiceID = reference.ToPtrValue(rsp.ResolvedValue)
+		mg.Spec.InitProvider.Bindings[i3].ServiceIDRef = rsp.ResolvedReference
+
+	}
+
+	return nil
+}
+
+// ResolveReferences of this ScriptSubdomain.
+func (mg *ScriptSubdomain) ResolveReferences(ctx context.Context, c client.Reader) error {
+	r := reference.NewAPINamespacedResolver(c, mg)
+
+	var rsp reference.NamespacedResolutionResponse
+	var err error
+
+	rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.ScriptName),
+		Extract:      preview.AccessWorkerName(),
+		Namespace:    mg.GetNamespace(),
+		Reference:    mg.Spec.ForProvider.AccessApplicationRef,
+		Selector:     mg.Spec.ForProvider.AccessApplicationSelector,
+		To: reference.To{
+			List:    &v1alpha12.TrustAccessApplicationList{},
+			Managed: &v1alpha12.TrustAccessApplication{},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "mg.Spec.ForProvider.ScriptName")
+	}
+	mg.Spec.ForProvider.ScriptName = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.AccessApplicationRef = rsp.ResolvedReference
+
+	rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.InitProvider.ScriptName),
+		Extract:      preview.AccessWorkerName(),
+		Namespace:    mg.GetNamespace(),
+		Reference:    mg.Spec.InitProvider.AccessApplicationRef,
+		Selector:     mg.Spec.InitProvider.AccessApplicationSelector,
+		To: reference.To{
+			List:    &v1alpha12.TrustAccessApplicationList{},
+			Managed: &v1alpha12.TrustAccessApplication{},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "mg.Spec.InitProvider.ScriptName")
+	}
+	mg.Spec.InitProvider.ScriptName = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.InitProvider.AccessApplicationRef = rsp.ResolvedReference
 
 	return nil
 }
