@@ -66,7 +66,7 @@ supported. The provider verifies both manifest and compressed-layer digests.
 apiVersion: workers.upjet-cloudflare.m.upbound.io/v1alpha1
 kind: Script
 metadata:
-  name: preview-gateway
+  name: preview-worker
   namespace: preview-123
 spec:
   artifact:
@@ -75,7 +75,7 @@ spec:
       name: worker-registry
   forProvider:
     accountId: "your-cloudflare-account-id"
-    scriptName: preview-123-gateway
+    scriptName: preview-123-worker
     compatibilityDate: "2026-11-16"
     compatibilityFlags: [nodejs_compat]
     bindings:
@@ -159,7 +159,7 @@ Cloudflare Access policies, VPC bindings or public ingress automatically.
 
 ## ID-based resources used by private previews
 
-The private Gateway pilot also uses Access service tokens/applications, Tunnels
+Private Workers can use Access service tokens/applications, Tunnels
 and Connectivity Directory services. Their native reads require a server-issued
 ID. Upjet's initial synthetic state contains an empty ID, which makes the native
 read fail before creation (for example, `missing required service_token_id`).
