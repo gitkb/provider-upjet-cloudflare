@@ -129,7 +129,9 @@ Inactive cache versions and abandoned downloads become eligible for removal
 after 24 hours. Later materializations sweep at most once per hour, taking the
 same per-resource locks as downloads. Removing a cache never deletes Cloudflare
 resources. Deleting a managed resource uses the existing provider lifecycle and
-does not require fetching the artifact or reading its registry Secret. Normal
+does not require fetching the artifact or reading its registry Secret. The
+provider supplies a minimal inline module only to satisfy native configuration
+validation during refresh/destroy; the managed deletion path never uploads it. Normal
 Cloudflare credentials and the resource's management/deletion policy still apply.
 
 Archives accept regular files and directories, with at most 10,000 entries,
