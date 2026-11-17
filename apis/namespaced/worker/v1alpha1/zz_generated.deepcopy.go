@@ -9,8 +9,9 @@
 package v1alpha1
 
 import (
-	"github.com/crossplane/crossplane/apis/v2/core/v2"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+	v2 "github.com/crossplane/crossplane/apis/v2/core/v2"
+	"github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -3740,6 +3741,16 @@ func (in *VersionParameters) DeepCopy() *VersionParameters {
 func (in *VersionSpec) DeepCopyInto(out *VersionSpec) {
 	*out = *in
 	in.ManagedResourceSpec.DeepCopyInto(&out.ManagedResourceSpec)
+	if in.Artifact != nil {
+		in, out := &in.Artifact, &out.Artifact
+		*out = new(workerartifact.Source)
+		(*in).DeepCopyInto(*out)
+	}
+	if in.ArtifactFiles != nil {
+		in, out := &in.ArtifactFiles, &out.ArtifactFiles
+		*out = new(workerartifact.Files)
+		(*in).DeepCopyInto(*out)
+	}
 	in.ForProvider.DeepCopyInto(&out.ForProvider)
 	in.InitProvider.DeepCopyInto(&out.InitProvider)
 }
