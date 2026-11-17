@@ -1,3 +1,5 @@
 # Terraform resource type names in a generator test; this line contains no credential.
 f117a6f9d42b75ee0896159243b9ced9885402dc:internal/previewgen/templates_test.go:cloudflare-api-key:39
 451bae3b1ebc4159a7ab8d94373190e5795d0d7f:internal/previewgen/templates_test.go:cloudflare-api-key:41
+f894d0b58daac14bfb54e3ffd2e7fc9e164558f0:internal/previewgen/templates_test.go:cloudflare-api-key:39
+0cbeb8490771f4e328bbd43e5cac51e1dd2679cd:internal/previewgen/templates_test.go:cloudflare-api-key:41

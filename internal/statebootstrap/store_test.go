@@ -105,26 +105,21 @@ func TestRealUpjetStoreStartsNewResourceWithoutSyntheticInstance(t *testing.T) {
 		t.Fatal(err)
 	}
 	path := filepath.Join(os.TempDir(), string(tr.GetUID()), "terraform.tfstate")
-	raw, err := os.ReadFile(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	var got map[string]any
-	if err := json.Unmarshal(raw, &got); err != nil {
-		t.Fatal(err)
-	}
-	if len(got["resources"].([]any)) != 0 {
-		t.Fatal("native refresh would see the uncreated resource")
+	// The upstream vendored fix skips initial state creation altogether. The
+	// adapter must preserve that behavior as well as cleaning older cached state.
+	if _, err := os.Stat(path); !os.IsNotExist(err) {
+		t.Fatalf("new resource has synthetic state: %v", err)
 	}
 	// An explicit external identifier still follows the native adoption path.
 	meta.SetExternalName(tr, "existing-token")
 	if _, err := NewStore(base).Workspace(t.Context(), nil, tr, setup, cfg); err != nil {
 		t.Fatal(err)
 	}
-	raw, err = os.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatal(err)
 	}
+	var got map[string]any
 	if err := json.Unmarshal(raw, &got); err != nil {
 		t.Fatal(err)
 	}

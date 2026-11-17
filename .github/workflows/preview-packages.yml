@@ -4,6 +4,12 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'build/**'
+      - 'patches/**'
+      - 'cluster/images/provider-upjet-cloudflare/**'
       - 'apis/**'
       - 'config/**'
       - 'internal/**'
@@ -48,6 +54,8 @@ jobs:
           curl --fail --location --retry 3 --max-time 120 \
             https://releases.crossplane.io/stable/v2.1.3/bin/linux_amd64/crank -o /tmp/crossplane
           chmod +x /tmp/crossplane
+      - name: Vendor dependencies and apply upstream fixes
+        run: make vendor vendor.check
       - name: Build selected family package
         env:
           GROUP: ${{ matrix.group }}
