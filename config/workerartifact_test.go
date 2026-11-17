@@ -13,9 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/yaml"
 
-	clusterversion "github.com/wildbitca/provider-upjet-cloudflare/apis/cluster/worker/v1alpha1"
 	clusterscript "github.com/wildbitca/provider-upjet-cloudflare/apis/cluster/workers/v1alpha1"
-	version "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/worker/v1alpha1"
 	script "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/workers/v1alpha1"
 	api "github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"
 	artifact "github.com/wildbitca/provider-upjet-cloudflare/internal/workerartifact"
@@ -30,8 +28,6 @@ func TestWorkerArtifactsReachRealUpjetFileProducer(t *testing.T) {
 	}{
 		{"namespaced Script", &script.Script{Spec: script.ScriptSpec{Artifact: &api.Source{Ref: ref}}}, true},
 		{"cluster Script", &clusterscript.Script{Spec: clusterscript.ScriptSpec{Artifact: &api.Source{Ref: ref}}}, false},
-		{"namespaced Version", &version.Version{Spec: version.VersionSpec{Artifact: &api.Source{Ref: ref}}}, true},
-		{"cluster Version", &clusterversion.Version{Spec: clusterversion.VersionSpec{Artifact: &api.Source{Ref: ref}}}, false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.tr.SetName("preview-worker")
@@ -66,8 +62,6 @@ func TestWorkerArtifactsReachRealUpjetFileProducer(t *testing.T) {
 				if p["content_file"] != filepath.Join(files.Root, "worker.js") || len(p["files"].(map[string]any)) != 1 {
 					t.Fatal("Script main module or extra module lost")
 				}
-			} else if len(p["modules"].([]any)) != 2 {
-				t.Fatal("Version multipart modules lost")
 			}
 			serialized, err := json.Marshal(tc.tr)
 			if err != nil {
@@ -93,7 +87,7 @@ func TestWorkerArtifactsReachRealUpjetFileProducer(t *testing.T) {
 }
 
 func TestWorkerArtifactCRDSchemas(t *testing.T) {
-	for _, file := range []string{"workers.upjet-cloudflare.m.upbound.io_scripts.yaml", "workers.upjet-cloudflare.upbound.io_scripts.yaml", "worker.upjet-cloudflare.m.upbound.io_versions.yaml", "worker.upjet-cloudflare.upbound.io_versions.yaml"} {
+	for _, file := range []string{"workers.upjet-cloudflare.m.upbound.io_scripts.yaml", "workers.upjet-cloudflare.upbound.io_scripts.yaml"} {
 		data, err := os.ReadFile(filepath.Join("..", "package", "crds", file))
 		if err != nil {
 			t.Fatal(err)

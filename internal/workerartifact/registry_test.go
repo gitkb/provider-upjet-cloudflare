@@ -173,3 +173,16 @@ func TestCanceledFetch(t *testing.T) {
 		t.Fatal("canceled fetch succeeded")
 	}
 }
+
+func TestDockerHubCredentialAlias(t *testing.T) {
+	data := []byte(`{"auths":{"https://index.docker.io/v1/":{"username":"worker","password":"password"}}}`)
+	c, err := dockerCredential(data, "docker.io")
+	if err != nil || c.Username != "worker" || c.Password != "password" {
+		t.Fatalf("Docker Hub credential alias not resolved: %v", err)
+	}
+	for _, host := range []string{"ghcr.io", "index.docker.io.evil.example"} {
+		if _, err := dockerCredential(data, host); err == nil {
+			t.Fatalf("Docker Hub credentials leaked to %s", host)
+		}
+	}
+}

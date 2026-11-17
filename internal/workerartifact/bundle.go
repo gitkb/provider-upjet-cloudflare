@@ -85,10 +85,10 @@ func validateHeader(count int, hdr *tar.Header) error {
 }
 
 func extractEntry(root *os.Root, tr *tar.Reader, hdr *tar.Header, seen map[string]bool, expanded *int64) error {
-	name := strings.TrimSuffix(strings.TrimPrefix(hdr.Name, "./"), "/")
-	if name == "." && hdr.Typeflag == tar.TypeDir {
+	if (hdr.Name == "." || hdr.Name == "./") && hdr.Typeflag == tar.TypeDir {
 		return nil
 	}
+	name := strings.TrimSuffix(strings.TrimPrefix(hdr.Name, "./"), "/")
 	if !validPath(name) || seen[name] {
 		return fmt.Errorf("invalid or duplicate worker bundle entry %q", hdr.Name)
 	}

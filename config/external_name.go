@@ -378,7 +378,7 @@ func ExternalNameConfigurations() config.ResourceOption {
 		if r.Name == originPullsResource {
 			r.InitializerFns = append(r.InitializerFns, originPullsInitializer)
 		}
-		if r.Name == "cloudflare_workers_script" || r.Name == "cloudflare_worker_version" {
+		if r.Name == "cloudflare_workers_script" {
 			r.InitializerFns = append(r.InitializerFns, workerartifact.NewInitializer)
 		}
 	}

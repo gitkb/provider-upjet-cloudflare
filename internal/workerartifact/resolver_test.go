@@ -21,7 +21,6 @@ import (
 	"oras.land/oras-go/v2/registry/remote/auth"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 
-	versionapi "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/worker/v1alpha1"
 	scriptapi "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/workers/v1alpha1"
 	api "github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"
 )
@@ -199,7 +198,7 @@ func TestExistingInputsAndArtifactConflict(t *testing.T) {
 	}
 }
 
-func TestVersionAndScriptGetAllModules(t *testing.T) {
+func TestScriptGetsAllModules(t *testing.T) {
 	m := api.Manifest{SchemaVersion: 1, MainModule: "worker.js", Modules: []api.Module{{Name: "worker.js", ContentType: "application/javascript+module"}, {Name: "helper.wasm", ContentType: "application/wasm"}}}
 	data, err := json.Marshal(m)
 	if err != nil {
@@ -208,18 +207,7 @@ func TestVersionAndScriptGetAllModules(t *testing.T) {
 	fetcher := &memoryFetcher{data: bundle(t, map[string]string{manifestName: string(data), "worker.js": "export default {}", "helper.wasm": "wasm"})}
 	resolver := &Resolver{Root: t.TempDir(), Fetcher: fetcher}
 	ref := "registry.example/bundle@sha256:" + strings.Repeat("a", 64)
-	v := &versionapi.Version{ObjectMeta: metav1.ObjectMeta{UID: "version", Namespace: "preview"}, Spec: versionapi.VersionSpec{Artifact: &api.Source{Ref: ref}}}
 	initializer := resolver.Initializer(fakeKube(t).Build())
-	if err := initializer.Initialize(t.Context(), v); err != nil {
-		t.Fatal(err)
-	}
-	p, err := v.GetParameters()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(p["modules"].([]any)) != 2 {
-		t.Fatal("Version lost modules")
-	}
 	s := newScript("script", ref)
 	if err := initializer.Initialize(t.Context(), s); err != nil {
 		t.Fatal(err)

@@ -23,7 +23,7 @@ import (
 	api "github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"
 )
 
-// Resource is implemented by generated Script and Version API adapters.
+// Resource is implemented by generated Script API adapters.
 type Resource interface {
 	xpresource.Managed
 	GetWorkerArtifact() *api.Source

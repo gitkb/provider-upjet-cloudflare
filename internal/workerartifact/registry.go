@@ -172,7 +172,11 @@ func dockerCredential(data []byte, host string) (auth.Credential, error) {
 		return auth.EmptyCredential, fmt.Errorf("invalid dockerconfigjson registry credentials")
 	}
 	for key, entry := range config.Auths {
-		if strings.TrimSuffix(strings.TrimPrefix(key, "https://"), "/") != host {
+		registryHost := strings.TrimSuffix(strings.TrimPrefix(key, "https://"), "/")
+		if host == "docker.io" && registryHost == "index.docker.io/v1" {
+			registryHost = "docker.io"
+		}
+		if registryHost != host {
 			continue
 		}
 		credential := auth.Credential{Username: entry.Username, Password: entry.Password, RefreshToken: entry.IdentityToken}

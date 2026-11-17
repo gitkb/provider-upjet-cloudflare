@@ -109,3 +109,35 @@ func TestGzipChecksumIsVerified(t *testing.T) {
 		t.Fatal("corrupt gzip trailer was accepted")
 	}
 }
+
+func TestExtractionAcceptsRootDirectoryHeaders(t *testing.T) {
+	for _, name := range []string{".", "./"} {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			gz := gzip.NewWriter(&buf)
+			tw := tar.NewWriter(gz)
+			if err := tw.WriteHeader(&tar.Header{Name: name, Typeflag: tar.TypeDir}); err != nil {
+				t.Fatal(err)
+			}
+			if err := tw.WriteHeader(&tar.Header{Name: "./worker.js", Typeflag: tar.TypeReg, Size: 6}); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := tw.Write([]byte("worker")); err != nil {
+				t.Fatal(err)
+			}
+			if err := tw.Close(); err != nil {
+				t.Fatal(err)
+			}
+			if err := gz.Close(); err != nil {
+				t.Fatal(err)
+			}
+			root := t.TempDir()
+			if err := extract(bytes.NewReader(buf.Bytes()), root); err != nil {
+				t.Fatal(err)
+			}
+			if data, err := os.ReadFile(filepath.Join(root, "worker.js")); err != nil || string(data) != "worker" {
+				t.Fatalf("regular file following root directory not extracted: %v", err)
+			}
+		})
+	}
+}

@@ -44,4 +44,11 @@ func TestUnrelatedResourcesGenerateIdentically(t *testing.T) {
 	if !bytes.Equal(render(t, tfOriginal, values), render(t, templates.TerraformedTemplate, values)) {
 		t.Fatal("Worker extension changes unrelated Terraform adapter")
 	}
+	values["CRD"].(map[string]string)["Kind"] = "Version"
+	values["CRD"].(map[string]string)["Group"] = "worker.upjet-cloudflare.m.upbound.io"
+	values["Terraform"].(map[string]any)["ResourceType"] = "cloudflare_worker_version"
+	if !bytes.Equal(render(t, apiOriginal, values), render(t, templates.CRDTypesTemplate, values)) ||
+		!bytes.Equal(render(t, tfOriginal, values), render(t, templates.TerraformedTemplate, values)) {
+		t.Fatal("Script artifact extension changes the unsupported Version resource")
+	}
 }
