@@ -1,7 +1,6 @@
 # Prebuilt Worker artifacts
 
-`Script` (`workers.upjet-cloudflare[.m].upbound.io/v1alpha1`) and `Version`
-(`worker.upjet-cloudflare[.m].upbound.io/v1alpha1`) accept an optional
+`Script` (`workers.upjet-cloudflare[.m].upbound.io/v1alpha1`) accepts an optional
 `spec.artifact`. It selects an immutable OCI bundle containing prebuilt Worker
 modules and optional Workers Static Assets. CI builds the application; the
 provider fetches it and supplies local files to the existing upload resources.
@@ -106,8 +105,12 @@ Other inputs, including `assets.config`, remain available. Without `spec.artifac
 the existing input path is used.
 
 `Script` uploads the main module through `content_file` and extra modules through
-the existing `files` map. `Version` supplies the existing multipart `modules`
-input; the parent Worker and traffic `Deployment` remain separately managed.
+the existing `files` map. New bundles can update the Script pin in place.
+
+The separate `Version` resource does not accept `spec.artifact`. An OrbStack test
+against Cloudflare exposed a native refresh failure for a new Version without an
+ID; native module changes also require replacement, conflicting with Upjet
+`prevent_destroy`. Version artifact support needs a separate lifecycle design.
 `status.resolvedArtifactDigest` reports a successfully fetched bundle, not a
 successful Cloudflare deployment. Use the resource's normal conditions and
 application smoke checks to verify deployment behavior.

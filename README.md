@@ -147,7 +147,7 @@ API reference: [doc.crds.dev](https://doc.crds.dev/github.com/wildbitca/provider
 
 ## Prebuilt Worker artifacts
 
-Worker `Script` and `Version` resources can select digest-pinned OCI bundles of
+Worker `Script` resources can select digest-pinned OCI bundles of
 prebuilt modules and static assets with `spec.artifact`. See the
 [bundle format, examples and lifecycle](docs/worker-artifacts.md).
 

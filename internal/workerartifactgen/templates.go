@@ -9,8 +9,8 @@ import (
 	"github.com/crossplane/upjet/v2/pkg/pipeline/templates"
 )
 
-const apiCondition = `or (and (eq .CRD.Kind "Script") (or (eq .CRD.Group "workers.upjet-cloudflare.upbound.io") (eq .CRD.Group "workers.upjet-cloudflare.m.upbound.io"))) (and (eq .CRD.Kind "Version") (or (eq .CRD.Group "worker.upjet-cloudflare.upbound.io") (eq .CRD.Group "worker.upjet-cloudflare.m.upbound.io")))`
-const tfCondition = `or (eq .Terraform.ResourceType "cloudflare_workers_script") (eq .Terraform.ResourceType "cloudflare_worker_version")`
+const apiCondition = `and (eq .CRD.Kind "Script") (or (eq .CRD.Group "workers.upjet-cloudflare.upbound.io") (eq .CRD.Group "workers.upjet-cloudflare.m.upbound.io"))`
+const tfCondition = `eq .Terraform.ResourceType "cloudflare_workers_script"`
 const artifactImport = `workerartifact "github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"`
 
 // Configure extends the templates at generation time, not the runtime provider.

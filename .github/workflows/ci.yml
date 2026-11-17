@@ -211,8 +211,8 @@ jobs:
       - name: Test Worker artifact reconciliation
         run: go test -race -p 2 ./internal/workerartifact ./internal/workerartifactgen ./config
 
-      - name: Build Worker provider entry points
-        run: go build -p 2 ./cmd/provider/workers ./cmd/provider/worker
+      - name: Build Worker Script provider entry point
+        run: go build -p 2 ./cmd/provider/workers
 
       - name: Publish Unit Test Coverage
         uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1

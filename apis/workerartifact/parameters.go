@@ -65,8 +65,6 @@ func Parameters(source *Source, files *Files, deleting bool, kind string, p map[
 	switch kind {
 	case "cloudflare_workers_script":
 		scriptParameters(files, p)
-	case "cloudflare_worker_version":
-		versionParameters(files, p)
 	default:
 		return nil, fmt.Errorf("unsupported artifact resource %q", kind)
 	}
@@ -95,16 +93,5 @@ func scriptParameters(files *Files, p map[string]any) {
 	}
 	if len(additional) > 0 {
 		p["files"] = additional
-	}
-}
-
-func versionParameters(files *Files, p map[string]any) {
-	modules := make([]any, 0, len(files.Manifest.Modules))
-	for _, module := range files.Manifest.Modules {
-		modules = append(modules, map[string]any{"name": module.Name, "content_type": module.ContentType, "content_file": filepath.Join(files.Root, module.Name)})
-	}
-	if len(modules) > 0 {
-		p["modules"] = modules
-		p["main_module"] = files.Manifest.MainModule
 	}
 }
