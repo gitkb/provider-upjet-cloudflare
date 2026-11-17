@@ -27,6 +27,7 @@ import (
 type Resource interface {
 	xpresource.Managed
 	GetWorkerArtifact() *api.Source
+	GetWorkerArtifactFiles() *api.Files
 	SetWorkerArtifactFiles(*api.Files)
 	SetResolvedWorkerArtifact(string)
 	ValidateWorkerArtifactInputs() error

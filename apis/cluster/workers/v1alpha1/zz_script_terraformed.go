@@ -147,6 +147,9 @@ func (tr *Script) GetTerraformSchemaVersion() int {
 // GetWorkerArtifact returns the optional immutable bundle selection.
 func (tr *Script) GetWorkerArtifact() *workerartifact.Source { return tr.Spec.Artifact }
 
+// GetWorkerArtifactFiles returns the controller-local bundle attachment.
+func (tr *Script) GetWorkerArtifactFiles() *workerartifact.Files { return tr.Spec.ArtifactFiles }
+
 // SetWorkerArtifactFiles attaches controller-local files without persisting paths.
 func (tr *Script) SetWorkerArtifactFiles(files *workerartifact.Files) { tr.Spec.ArtifactFiles = files }
 
