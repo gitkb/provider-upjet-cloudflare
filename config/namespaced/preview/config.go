@@ -86,7 +86,7 @@ func AccessWorkerName() reference.ExtractValueFn {
 		}
 		domain, _ := attrs["domain"].(string)
 		parts := strings.Split(domain, ".")
-		if len(parts) != 4 || parts[2] != "workers" || parts[3] != "dev" || !workerName.MatchString(parts[0]) {
+		if len(parts) != 4 || strings.Join(parts[2:], ".") != "workers.dev" || !workerName.MatchString(parts[0]) {
 			return ""
 		}
 		return parts[0]
@@ -105,23 +105,30 @@ func serviceTokenPolicies(attrs map[string]any) bool {
 		if !ok || policy["decision"] != "non_identity" {
 			return false
 		}
-		includes, ok := policy["include"].([]any)
-		if !ok || len(includes) == 0 {
+		if !serviceTokenIncludes(policy["include"]) {
 			return false
 		}
-		for _, item := range includes {
-			rule, ok := item.(map[string]any)
-			if !ok || len(rule) != 1 {
-				return false
-			}
-			token, ok := rule["service_token"].(map[string]any)
-			if !ok {
-				return false
-			}
-			id, ok := token["token_id"].(string)
-			if !ok || id == "" {
-				return false
-			}
+	}
+	return true
+}
+
+func serviceTokenIncludes(value any) bool {
+	includes, ok := value.([]any)
+	if !ok || len(includes) == 0 {
+		return false
+	}
+	for _, item := range includes {
+		rule, ok := item.(map[string]any)
+		if !ok || len(rule) != 1 {
+			return false
+		}
+		token, ok := rule["service_token"].(map[string]any)
+		if !ok {
+			return false
+		}
+		id, ok := token["token_id"].(string)
+		if !ok || id == "" {
+			return false
 		}
 	}
 	return true

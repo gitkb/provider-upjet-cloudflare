@@ -23,7 +23,7 @@ type accessSource struct {
 
 // NewInitializer validates Access before the connector can contact Cloudflare.
 // It deliberately resolves with no cached Worker name.
-func NewInitializer(kube client.Client) managed.Initializer {
+func NewInitializer(kube client.Reader) managed.Initializer {
 	return managed.InitializerFn(func(ctx context.Context, mg xpresource.Managed) error {
 		if mg.GetDeletionTimestamp() != nil {
 			return nil
@@ -61,7 +61,7 @@ func validate(ctx context.Context, kube client.Reader, mg xpresource.Managed, ac
 		return nil
 	}
 	if account == "" {
-		return fmt.Errorf("Access application reference requires a Cloudflare account ID")
+		return fmt.Errorf("an Access application reference requires a Cloudflare account ID")
 	}
 	result, err := reference.NewAPINamespacedResolver(kube, mg).Resolve(ctx, reference.NamespacedResolutionRequest{
 		Namespace: mg.GetNamespace(),
@@ -86,7 +86,7 @@ func validate(ctx context.Context, kube client.Reader, mg xpresource.Managed, ac
 		return fmt.Errorf("same-account service-token Access application is unavailable")
 	}
 	if name := reference.FromPtrValue(source.name); name != "" && name != result.ResolvedValue {
-		return fmt.Errorf("Worker name does not match the referenced Access application")
+		return fmt.Errorf("configured Worker name does not match the referenced Access application")
 	}
 	return nil
 }

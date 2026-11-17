@@ -24,6 +24,7 @@ import (
 	v1alpha1 "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/workers/v1alpha1"
 	features "github.com/wildbitca/provider-upjet-cloudflare/internal/features"
 
+	workeraccess "github.com/wildbitca/provider-upjet-cloudflare/internal/workeraccess"
 	workerartifactrefs "github.com/wildbitca/provider-upjet-cloudflare/internal/workerartifact"
 )
 
@@ -50,6 +51,7 @@ func SetupGated(mgr ctrl.Manager, o tjcontroller.Options) error {
 func Setup(mgr ctrl.Manager, o tjcontroller.Options) error {
 	name := managed.ControllerName(v1alpha1.Script_GroupVersionKind.String())
 	var initializers managed.InitializerChain
+	initializers = append(initializers, workeraccess.NewInitializer(mgr.GetAPIReader()))
 	for _, i := range o.Provider.Resources["cloudflare_workers_script"].InitializerFns {
 		initializers = append(initializers, i(mgr.GetClient()))
 	}
