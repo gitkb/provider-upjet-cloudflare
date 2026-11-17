@@ -38,7 +38,7 @@ func TestOnlyIDBasedPreviewControllersUseAdapter(t *testing.T) {
 	}
 	for _, resource := range []string{
 		"cloudflare_zero_trust_access_service_token",
-		"cloudflare_zero_trust_tunnel_cloudflared",
+		"cloudflare_zero_trust_tunnel_cloudflared", // gitleaks:allow Terraform resource type, not a credential.
 		"cloudflare_zero_trust_access_application",
 		"cloudflare_connectivity_directory_service",
 	} {

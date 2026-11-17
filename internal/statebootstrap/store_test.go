@@ -1,6 +1,7 @@
 package statebootstrap
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"os"
@@ -73,7 +74,7 @@ func TestOnlySyntheticEmptyIDStateIsRemoved(t *testing.T) {
 				t.Fatal(err)
 			}
 			if !tc.clears {
-				if string(before) != string(after) {
+				if !bytes.Equal(before, after) {
 					t.Fatal("changed established or ambiguous state")
 				}
 				return
@@ -179,7 +180,7 @@ func TestEstablishedDeletingAndRunningWorkspacesAreUntouched(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if string(after) != string(raw) {
+			if !bytes.Equal(after, raw) {
 				t.Fatal("adapter edited an established, deleting or running workspace")
 			}
 		})
