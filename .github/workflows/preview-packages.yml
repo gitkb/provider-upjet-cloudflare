@@ -9,6 +9,8 @@ on:
       - 'internal/**'
       - 'cmd/**'
       - 'package/**'
+      - 'scripts/build-family.sh'
+      - 'scripts/test-family-metadata.py'
       - '.github/workflows/preview-packages.yml'
 
 permissions: {}
@@ -39,6 +41,8 @@ jobs:
           go-version: '1.26.8'
           cache: true
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+      - name: Verify family compatibility metadata
+        run: python3 scripts/test-family-metadata.py
       - name: Install Crossplane package CLI
         run: |
           curl --fail --location --retry 3 --max-time 120 \
@@ -47,6 +51,7 @@ jobs:
       - name: Build selected family package
         env:
           GROUP: ${{ matrix.group }}
+          FAMILY_MIN_VERSION: v0.4.2
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           make build.family FAMILY_SUBPACKAGES="$GROUP" SUBPACKAGES="$GROUP" PLATFORM=linux_amd64 \
