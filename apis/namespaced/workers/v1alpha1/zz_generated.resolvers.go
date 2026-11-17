@@ -87,6 +87,23 @@ func (mg *Script) ResolveReferences(ctx context.Context, c client.Reader) error 
 		mg.Spec.ForProvider.Bindings[i3].ServiceIDRef = rsp.ResolvedReference
 
 	}
+	rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.ScriptName),
+		Extract:      preview.AccessWorkerName(),
+		Namespace:    mg.GetNamespace(),
+		Reference:    mg.Spec.ForProvider.AccessApplicationRef,
+		Selector:     mg.Spec.ForProvider.AccessApplicationSelector,
+		To: reference.To{
+			List:    &v1alpha12.TrustAccessApplicationList{},
+			Managed: &v1alpha12.TrustAccessApplication{},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "mg.Spec.ForProvider.ScriptName")
+	}
+	mg.Spec.ForProvider.ScriptName = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.AccessApplicationRef = rsp.ResolvedReference
+
 	for i3 := 0; i3 < len(mg.Spec.InitProvider.Bindings); i3++ {
 		rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
 			CurrentValue: reference.FromPtrValue(mg.Spec.InitProvider.Bindings[i3].ServiceID),
@@ -106,6 +123,22 @@ func (mg *Script) ResolveReferences(ctx context.Context, c client.Reader) error 
 		mg.Spec.InitProvider.Bindings[i3].ServiceIDRef = rsp.ResolvedReference
 
 	}
+	rsp, err = r.Resolve(ctx, reference.NamespacedResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.InitProvider.ScriptName),
+		Extract:      preview.AccessWorkerName(),
+		Namespace:    mg.GetNamespace(),
+		Reference:    mg.Spec.InitProvider.AccessApplicationRef,
+		Selector:     mg.Spec.InitProvider.AccessApplicationSelector,
+		To: reference.To{
+			List:    &v1alpha12.TrustAccessApplicationList{},
+			Managed: &v1alpha12.TrustAccessApplication{},
+		},
+	})
+	if err != nil {
+		return errors.Wrap(err, "mg.Spec.InitProvider.ScriptName")
+	}
+	mg.Spec.InitProvider.ScriptName = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.InitProvider.AccessApplicationRef = rsp.ResolvedReference
 
 	return nil
 }
