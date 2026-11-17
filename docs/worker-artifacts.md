@@ -11,6 +11,12 @@ This extension supplies release artifacts to that existing implementation. It
 does not run Wrangler or introduce a separate OpenTofu Workspace/state backend.
 The provider's existing Terraform execution and managed-resource lifecycle apply.
 
+For the complete CI-to-deployment flow, see
+[GitHub Actions and GitOps](github-actions-gitops.md): application workflow YAML,
+bundle publication, digest outputs, preview promotion, registry/Cloudflare
+credential ownership and deployment verification. The sections below define the
+bundle format and managed-resource inputs used by that workflow.
+
 ## Build and publish
 
 The OCI image manifest must have artifact type
