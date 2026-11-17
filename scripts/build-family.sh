@@ -19,6 +19,8 @@ set -euo pipefail
 
 SUBPACKAGE="${1:?Usage: build-family.sh <subpackage> <version> <output-dir> <crossplane-cli> <build-registry> <arch> <platform>}"
 VERSION="${2:?}"
+# Artifact releases may reuse the unchanged shared ProviderConfig API.
+FAMILY_MIN_VERSION="${FAMILY_MIN_VERSION:-${VERSION}}"
 OUTPUT_DIR="${3:?}"
 CROSSPLANE_CLI="${4:?}"
 BUILD_REGISTRY="${5:?}"
@@ -102,7 +104,7 @@ if [ "${SUBPACKAGE}" != "config" ] && [ "${SUBPACKAGE}" != "monolith" ]; then
 spec:
   dependsOn:
     - provider: xpkg.upbound.io/wildbitca/provider-family-cloudflare
-      version: ">= ${VERSION}"
+      version: ">= ${FAMILY_MIN_VERSION}"
   capabilities:
     - SafeStart
 YAML
