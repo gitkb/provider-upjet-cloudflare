@@ -21,6 +21,11 @@ func Configure(p *config.Provider) {
 	})
 	p.AddResourceConfigurator("cloudflare_workers_script", func(r *config.Resource) {
 		r.References["bindings.service_id"] = config.Reference{TerraformName: "cloudflare_connectivity_directory_service"}
+		r.References["script_name"] = config.Reference{
+			TerraformName: "cloudflare_zero_trust_access_application",
+			RefFieldName:  "AccessApplicationRef", SelectorFieldName: "AccessApplicationSelector",
+			Extractor: "github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()",
+		}
 	})
 	p.AddResourceConfigurator("cloudflare_zero_trust_access_application", func(r *config.Resource) {
 		r.References["policies.include.service_token.token_id"] = config.Reference{TerraformName: "cloudflare_zero_trust_access_service_token"}
