@@ -36,7 +36,12 @@ func TestOnlyIDBasedPreviewControllersUseAdapter(t *testing.T) {
 			t.Fatalf("changed unrelated controller %s", resource)
 		}
 	}
-	for _, resource := range []string{"cloudflare_zero_trust_access_service_token", "cloudflare_zero_trust_tunnel_cloudflared", "cloudflare_zero_trust_access_application", "cloudflare_connectivity_directory_service"} {
+	for _, resource := range []string{
+		"cloudflare_zero_trust_access_service_token",
+		"cloudflare_zero_trust_tunnel_cloudflared",
+		"cloudflare_zero_trust_access_application",
+		"cloudflare_connectivity_directory_service",
+	} {
 		if !strings.Contains(string(render(t, templates.ControllerTemplate, resource)), "statebootstrap.NewStore(o.WorkspaceStore)") {
 			t.Fatalf("missing adapter for %s", resource)
 		}
