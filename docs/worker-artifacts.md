@@ -169,3 +169,13 @@ already copied the version into `spec.forProvider.clientSecretVersion`, remove
 only that automatically populated field after installing the corrected package.
 Keep the existing external identifier and connection Secret so the same token
 continues to reconcile.
+
+Artifact-backed Scripts resolve references using incremental merge patches with
+a resource-version precondition. This preserves binding Secret selectors and
+earlier resolved fields when a later reference changes, without overwriting
+concurrent GitOps edits. The normal reference resolver remains selected for
+Scripts without an artifact; other controllers are unchanged. The implementation
+uses the managed reconciler's reference-resolver extension point and changes no
+Crossplane or Upjet dependencies. If an earlier controller removed binding
+selectors, resync the existing GitOps manifest after installing the corrected
+Workers package to restore the declared sources.

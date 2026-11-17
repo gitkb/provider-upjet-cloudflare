@@ -3,6 +3,7 @@ package workerartifactgen
 import (
 	"bytes"
 	"go/format"
+	"strings"
 	"testing"
 	"text/template"
 
@@ -26,9 +27,37 @@ func render(t *testing.T, source string, values map[string]any) []byte {
 	return formatted
 }
 
+func TestReferenceResolverIsSelectedOnlyForScriptControllers(t *testing.T) {
+	apiOriginal, tfOriginal, controllerOriginal := templates.CRDTypesTemplate, templates.TerraformedTemplate, templates.ControllerTemplate
+	t.Cleanup(func() {
+		templates.CRDTypesTemplate = apiOriginal
+		templates.TerraformedTemplate = tfOriginal
+		templates.ControllerTemplate = controllerOriginal
+	})
+	Configure()
+	values := map[string]any{
+		"Header": "// fixture", "GenStatement": "// generated", "Package": "test", "Imports": "",
+		"CRD": map[string]string{"Kind": "Example"}, "TypePackageAlias": "v1alpha1.", "FeaturesPackageAlias": "features.",
+	}
+	for _, resource := range []string{"cloudflare_dns_record", "cloudflare_worker_version", "cloudflare_r2_bucket"} {
+		values["ResourceType"] = resource
+		if !bytes.Equal(render(t, controllerOriginal, values), render(t, templates.ControllerTemplate, values)) {
+			t.Fatalf("changed unrelated controller %s", resource)
+		}
+	}
+	values["ResourceType"] = "cloudflare_workers_script"
+	if !strings.Contains(string(render(t, templates.ControllerTemplate, values)), "managed.WithReferenceResolver(workerartifactrefs.NewReferenceResolver(mgr.GetClient()))") {
+		t.Fatal("Script controller does not select the artifact-aware resolver")
+	}
+}
+
 func TestUnrelatedResourcesGenerateIdentically(t *testing.T) {
-	apiOriginal, tfOriginal := templates.CRDTypesTemplate, templates.TerraformedTemplate
-	t.Cleanup(func() { templates.CRDTypesTemplate = apiOriginal; templates.TerraformedTemplate = tfOriginal })
+	apiOriginal, tfOriginal, controllerOriginal := templates.CRDTypesTemplate, templates.TerraformedTemplate, templates.ControllerTemplate
+	t.Cleanup(func() {
+		templates.CRDTypesTemplate = apiOriginal
+		templates.TerraformedTemplate = tfOriginal
+		templates.ControllerTemplate = controllerOriginal
+	})
 	Configure()
 	values := map[string]any{
 		"Header": "// Test fixture", "GenStatement": "// Code generated.", "Imports": "", "Types": "",

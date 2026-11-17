@@ -23,6 +23,8 @@ import (
 
 	v1alpha1 "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/workers/v1alpha1"
 	features "github.com/wildbitca/provider-upjet-cloudflare/internal/features"
+
+	workerartifactrefs "github.com/wildbitca/provider-upjet-cloudflare/internal/workerartifact"
 )
 
 // SetupWebhookWithManager registers the conversion webhook for Script.
@@ -62,6 +64,7 @@ func Setup(mgr ctrl.Manager, o tjcontroller.Options) error {
 		managed.WithFinalizer(terraform.NewWorkspaceFinalizer(o.WorkspaceStore, xpresource.NewAPIFinalizer(mgr.GetClient(), managed.FinalizerName))),
 		managed.WithTimeout(3 * time.Minute),
 		managed.WithInitializers(initializers),
+		managed.WithReferenceResolver(workerartifactrefs.NewReferenceResolver(mgr.GetClient())),
 		managed.WithPollInterval(o.PollInterval),
 	}
 	if o.PollJitter != 0 {

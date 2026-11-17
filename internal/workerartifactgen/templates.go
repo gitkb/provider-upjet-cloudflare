@@ -15,6 +15,9 @@ const artifactImport = `workerartifact "github.com/wildbitca/provider-upjet-clou
 
 // Configure extends the templates at generation time, not the runtime provider.
 func Configure() {
+	controllerCondition := `eq .ResourceType "cloudflare_workers_script"`
+	templates.ControllerTemplate = replace(templates.ControllerTemplate, "\t{{ .Imports }}", "\t{{ .Imports }}{{ if "+controllerCondition+" }}\n\tworkerartifactrefs \"github.com/wildbitca/provider-upjet-cloudflare/internal/workerartifact\"{{ end }}")
+	templates.ControllerTemplate = replace(templates.ControllerTemplate, "\t\tmanaged.WithInitializers(initializers),", "\t\tmanaged.WithInitializers(initializers),{{ if "+controllerCondition+" }}\n\t\tmanaged.WithReferenceResolver(workerartifactrefs.NewReferenceResolver(mgr.GetClient())),{{ end }}")
 	templates.CRDTypesTemplate = replace(templates.CRDTypesTemplate, "\t{{ .Imports }}", "\t{{ .Imports }}{{ if "+apiCondition+" }}\n\t"+artifactImport+"{{ end }}")
 	templates.CRDTypesTemplate = replace(templates.CRDTypesTemplate, "\tForProvider       {{ .CRD.ForProviderType }} `json:\"forProvider\"`", `{{ if `+apiCondition+` }}
 	// Artifact optionally selects a digest-pinned prebuilt Worker bundle.
