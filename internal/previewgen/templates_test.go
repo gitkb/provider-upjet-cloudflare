@@ -31,9 +31,14 @@ func TestOnlyIDBasedPreviewControllersUseAdapter(t *testing.T) {
 	original := templates.ControllerTemplate
 	t.Cleanup(func() { templates.ControllerTemplate = original })
 	Configure()
-	for _, resource := range []string{"cloudflare_dns_record", "cloudflare_workers_script", "cloudflare_worker_version", "cloudflare_r2_bucket"} {
+	for _, resource := range []string{"cloudflare_dns_record", "cloudflare_worker_version", "cloudflare_r2_bucket"} {
 		if !bytes.Equal(render(t, original, resource), render(t, templates.ControllerTemplate, resource)) {
 			t.Fatalf("changed unrelated controller %s", resource)
+		}
+	}
+	for _, resource := range []string{"cloudflare_workers_script", "cloudflare_workers_script_subdomain"} {
+		if !strings.Contains(string(render(t, templates.ControllerTemplate, resource)), "workeraccess.NewInitializer(mgr.GetAPIReader())") {
+			t.Fatalf("missing Access initializer for %s", resource)
 		}
 	}
 	for _, resource := range []string{
