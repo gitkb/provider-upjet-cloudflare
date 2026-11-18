@@ -41,6 +41,10 @@ func TestOnlySyntheticEmptyIDStateIsRemoved(t *testing.T) {
 	}{
 		{"new", func(map[string]any) {}, true, false},
 		{"existing-id", func(s map[string]any) { s["resources"] = state("real-id")["resources"] }, false, false},
+		{"applied-with-new-lineage", func(s map[string]any) {
+			s["resources"] = state("real-id")["resources"]
+			s["lineage"] = "opentofu-lineage"
+		}, false, false},
 		{"unknown-id", func(s map[string]any) { s["resources"] = state(nil)["resources"] }, false, false},
 		{"other-lineage", func(s map[string]any) { s["lineage"] = "different-uid" }, false, true},
 		{"multiple-resources", func(s map[string]any) {
