@@ -102,7 +102,6 @@ jobs:
           printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
           target="ghcr.io/${GITHUB_REPOSITORY,,}:$GROUP-pr-$HEAD_SHA"
           /tmp/crossplane xpkg push \
-            --oci-annotation "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
             -f "_output/xpkg/linux_amd64/provider-cloudflare-$GROUP-v1.0.4-preview.$HEAD_SHA.xpkg" "$target"
           digest="$(docker buildx imagetools inspect "$target" --format '{{ .Manifest.Digest }}')"
           [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
