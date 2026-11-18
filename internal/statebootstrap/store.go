@@ -46,7 +46,8 @@ func (s *Store) Workspace(ctx context.Context, client resource.SecretClient, tr 
 		return w, nil
 	}
 	// This is Upjet v2.5.1's workspace location (tested using the actual store).
-	// The immutable server-assigned UID identifies the directory and state lineage.
+	// The immutable server-assigned UID identifies the directory and any state
+	// synthesized by Upjet. OpenTofu assigns its own lineage to real state.
 	dir, err := workspaceDirectory(s.fs, string(tr.GetUID()))
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ type workspaceState struct {
 }
 
 func (s workspaceState) validate(tr resource.Terraformed) error {
-	if s.Version != 4 || s.Lineage != string(tr.GetUID()) || len(s.Resources) != 1 {
+	if s.Version != 4 || len(s.Resources) != 1 {
 		return fmt.Errorf("unexpected workspace state identity")
 	}
 	r := s.Resources[0]
@@ -120,6 +121,9 @@ func withoutSyntheticInstance(raw []byte, tr resource.Terraformed) ([]byte, erro
 	id, exists := state.Resources[0].Instances[0].Attributes["id"]
 	if !exists || id != "" {
 		return nil, nil
+	}
+	if state.Lineage != string(tr.GetUID()) {
+		return nil, fmt.Errorf("unexpected synthetic workspace state lineage")
 	}
 	var document map[string]json.RawMessage
 	if err := json.Unmarshal(raw, &document); err != nil {
