@@ -34,6 +34,7 @@ jobs:
     permissions:
       contents: read
       id-token: write
+      packages: write
     strategy:
       fail-fast: false
       matrix:
@@ -70,7 +71,7 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::065328823520:role/gitkb-ecr-publisher
           aws-region: us-east-2
-      - name: Publish candidate package
+      - name: Publish candidate package to ECR
         env:
           GROUP: ${{ matrix.group }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -91,3 +92,18 @@ jobs:
           target="$ECR_REGISTRY/$repository:$GROUP-pr-${HEAD_SHA}"
           /tmp/crossplane xpkg push -f "_output/xpkg/linux_amd64/provider-cloudflare-$GROUP-v1.0.4-preview.$HEAD_SHA.xpkg" "$target"
           printf '%s\n' "$target" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish candidate package to GHCR
+        env:
+          GROUP: ${{ matrix.group }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          target="ghcr.io/${GITHUB_REPOSITORY,,}:$GROUP-pr-$HEAD_SHA"
+          /tmp/crossplane xpkg push \
+            --oci-annotation "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            -f "_output/xpkg/linux_amd64/provider-cloudflare-$GROUP-v1.0.4-preview.$HEAD_SHA.xpkg" "$target"
+          digest="$(docker buildx imagetools inspect "$target" --format '{{ .Manifest.Digest }}')"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf '%s@%s\n' "${target%:*}" "$digest" >> "$GITHUB_STEP_SUMMARY"
