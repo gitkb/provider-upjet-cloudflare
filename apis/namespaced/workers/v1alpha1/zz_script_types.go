@@ -12,6 +12,8 @@ import (
 
 	v2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	workerartifact "github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"
 )
 
 type AssetsInitParameters struct {
@@ -200,7 +202,16 @@ type BindingsInitParameters struct {
 
 	// (String) Identifier of the VPC service to bind to.
 	// Identifier of the VPC service to bind to.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/connectivity/v1alpha1.DirectoryService
 	ServiceID *string `json:"serviceId,omitempty" tf:"service_id,omitempty"`
+
+	// Reference to a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDRef *v2.NamespacedReference `json:"serviceIdRef,omitempty" tf:"-"`
+
+	// Selector for a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDSelector *v2.NamespacedSelector `json:"serviceIdSelector,omitempty" tf:"-"`
 
 	// (Attributes) A simple rate limit. (see below for nested schema)
 	Simple *SimpleInitParameters `json:"simple,omitempty" tf:"simple,omitempty"`
@@ -586,8 +597,17 @@ type BindingsParameters struct {
 
 	// (String) Identifier of the VPC service to bind to.
 	// Identifier of the VPC service to bind to.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/connectivity/v1alpha1.DirectoryService
 	// +kubebuilder:validation:Optional
 	ServiceID *string `json:"serviceId,omitempty" tf:"service_id,omitempty"`
+
+	// Reference to a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDRef *v2.NamespacedReference `json:"serviceIdRef,omitempty" tf:"-"`
+
+	// Selector for a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDSelector *v2.NamespacedSelector `json:"serviceIdSelector,omitempty" tf:"-"`
 
 	// (Attributes) A simple rate limit. (see below for nested schema)
 	// +kubebuilder:validation:Optional
@@ -1499,6 +1519,14 @@ type ScriptAnnotationsParameters struct {
 
 type ScriptInitParameters struct {
 
+	// Reference to a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationRef *v2.NamespacedReference `json:"accessApplicationRef,omitempty" tf:"-"`
+
+	// Selector for a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationSelector *v2.NamespacedSelector `json:"accessApplicationSelector,omitempty" tf:"-"`
+
 	// (String) Identifier.
 	// Identifier.
 	AccountID *string `json:"accountId,omitempty" tf:"account_id,omitempty"`
@@ -1597,6 +1625,10 @@ type ScriptInitParameters struct {
 
 	// (String) Name of the script, used in URLs and route configuration.
 	// Name of the script, used in URLs and route configuration.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustAccessApplication
+	// +crossplane:generate:reference:extractor=github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()
+	// +crossplane:generate:reference:refFieldName=AccessApplicationRef
+	// +crossplane:generate:reference:selectorFieldName=AccessApplicationSelector
 	ScriptName *string `json:"scriptName,omitempty" tf:"script_name,omitempty"`
 
 	// (Attributes Set) List of Workers that will consume logs from the attached Worker. (see below for nested schema)
@@ -1772,6 +1804,14 @@ type ScriptObservation struct {
 
 type ScriptParameters struct {
 
+	// Reference to a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationRef *v2.NamespacedReference `json:"accessApplicationRef,omitempty" tf:"-"`
+
+	// Selector for a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationSelector *v2.NamespacedSelector `json:"accessApplicationSelector,omitempty" tf:"-"`
+
 	// (String) Identifier.
 	// Identifier.
 	// +kubebuilder:validation:Optional
@@ -1895,6 +1935,10 @@ type ScriptParameters struct {
 
 	// (String) Name of the script, used in URLs and route configuration.
 	// Name of the script, used in URLs and route configuration.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustAccessApplication
+	// +crossplane:generate:reference:extractor=github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()
+	// +crossplane:generate:reference:refFieldName=AccessApplicationRef
+	// +crossplane:generate:reference:selectorFieldName=AccessApplicationSelector
 	// +kubebuilder:validation:Optional
 	ScriptName *string `json:"scriptName,omitempty" tf:"script_name,omitempty"`
 
@@ -2281,7 +2325,13 @@ type WorkerParameters struct {
 // ScriptSpec defines the desired state of Script
 type ScriptSpec struct {
 	v2.ManagedResourceSpec `json:",inline"`
-	ForProvider            ScriptParameters `json:"forProvider"`
+
+	// Artifact optionally selects a digest-pinned prebuilt Worker bundle.
+	// +optional
+	Artifact *workerartifact.Source `json:"artifact,omitempty"`
+	// ArtifactFiles is disposable local state and is never written to Kubernetes.
+	ArtifactFiles *workerartifact.Files `json:"-"`
+	ForProvider   ScriptParameters      `json:"forProvider"`
 	// THIS IS A BETA FIELD. It will be honored
 	// unless the Management Policies feature flag is disabled.
 	// InitProvider holds the same fields as ForProvider, with the exception
@@ -2299,6 +2349,9 @@ type ScriptSpec struct {
 type ScriptStatus struct {
 	v2.ManagedResourceStatus `json:",inline"`
 	AtProvider               ScriptObservation `json:"atProvider,omitempty"`
+	// ResolvedArtifactDigest identifies the fetched bundle, not deployment health.
+	// +optional
+	ResolvedArtifactDigest string `json:"resolvedArtifactDigest,omitempty"`
 }
 
 // +kubebuilder:object:root=true
@@ -2315,7 +2368,6 @@ type Script struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.accountId) || (has(self.initProvider) && has(self.initProvider.accountId))",message="spec.forProvider.accountId is a required parameter"
-	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.scriptName) || (has(self.initProvider) && has(self.initProvider.scriptName))",message="spec.forProvider.scriptName is a required parameter"
 	Spec   ScriptSpec   `json:"spec"`
 	Status ScriptStatus `json:"status,omitempty"`
 }
