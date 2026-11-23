@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: scripts.workers.upjet-cloudflare.upbound.io
 spec:
   group: workers.upjet-cloudflare.upbound.io
@@ -35,7 +35,9 @@ spec:
     schema:
       openAPIV3Schema:
         description: Script is the Schema for the Scripts API. Accepted Permissions
-          Workers Scripts ReadWorkers Scripts WriteWorkers Tail Read
+          Workers Scripts ReadWorkers Scripts WriteIndividual Workers AdminIndividual
+          Workers Content Read-OnlyIndividual Workers EditorWorkers AdminWorkers Content
+          Read-OnlyWorkers EditorWorkers Tail Read
         properties:
           apiVersion:
             description: |-
@@ -57,6 +59,34 @@ spec:
           spec:
             description: ScriptSpec defines the desired state of Script
             properties:
+              artifact:
+                description: Artifact optionally selects a digest-pinned prebuilt
+                  Worker bundle.
+                properties:
+                  pullSecretRef:
+                    description: |-
+                      PullSecretRef selects a kubernetes.io/dockerconfigjson Secret. Namespaced
+                      resources can only use their own namespace. Cluster resources must specify it.
+                    properties:
+                      name:
+                        description: Name identifies the Secret.
+                        minLength: 1
+                        type: string
+                      namespace:
+                        description: Namespace defaults to the managed resource's
+                          namespace.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  ref:
+                    description: Ref is an OCI manifest reference pinned by SHA-256
+                      digest, without a URL scheme.
+                    pattern: ^[^[:space:]@]+@sha256:[a-f0-9]{64}$
+                    type: string
+                required:
+                - ref
+                type: object
               deletionPolicy:
                 default: Delete
                 description: |-
@@ -267,9 +297,9 @@ spec:
                           type: string
                         jurisdiction:
                           description: |-
-                            high".
+                            high", "us".
                             The [jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/#jurisdictional-restrictions) of the R2 bucket.
-                            Available values: "eu", "fedramp", "fedramp-high".
+                            Available values: "eu", "fedramp", "fedramp-high", "us".
                           type: string
                         keyBase64SecretRef:
                           description: |-
@@ -485,8 +515,8 @@ spec:
                           x-kubernetes-list-type: set
                         versionId:
                           description: |-
-                            (String) Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
-                            Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
+                            (String) Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under /accounts/{account_id}/workers/workers/{worker_id}/versions accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
+                            Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under `/accounts/{account_id}/workers/workers/{worker_id}/versions` accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
                           type: string
                         workflowName:
                           description: |-
@@ -497,9 +527,9 @@ spec:
                     type: array
                   bindingsInherit:
                     description: |-
-                      (String) When set to "strict", the upload will fail if any inherit type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+                      (String) When set to "strict", the upload will fail with error 10057 if any inherit type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
                       Available values: "strict".
-                      When set to "strict", the upload will fail if any `inherit` type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+                      When set to "strict", the upload will fail with error 10057 if any `inherit` type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
                       Available values: "strict".
                     type: string
                   bodyPart:
@@ -530,6 +560,24 @@ spec:
                           (Boolean) Whether caching is enabled for this Worker.
                           Whether caching is enabled for this Worker.
                         type: boolean
+                    type: object
+                  codeUpdateStrategy:
+                    description: (Attributes) Choose whether to apply Durable Object
+                      code updates immediately or defer them. When omitted, the default
+                      strategy applies. (see below for nested schema)
+                    properties:
+                      maxDelay:
+                        description: |-
+                          (Number) Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+                          Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+                        type: number
+                      mode:
+                        description: |-
+                          (String) Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
+                          Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
+                        type: string
                     type: object
                   compatibilityDate:
                     description: |-
@@ -904,9 +952,11 @@ spec:
                     properties:
                       mode:
                         description: |-
-                          (String) Enables Smart Placement.
-                          Available values: "smart", "targeted".
+                          (String) Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
                           Enables [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
+
+                          Targeted placement mode.
                           Available values: "smart", "targeted".
                         type: string
                     type: object
@@ -1152,9 +1202,9 @@ spec:
                           type: string
                         jurisdiction:
                           description: |-
-                            high".
+                            high", "us".
                             The [jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/#jurisdictional-restrictions) of the R2 bucket.
-                            Available values: "eu", "fedramp", "fedramp-high".
+                            Available values: "eu", "fedramp", "fedramp-high", "us".
                           type: string
                         keyBase64SecretRef:
                           description: |-
@@ -1370,8 +1420,8 @@ spec:
                           x-kubernetes-list-type: set
                         versionId:
                           description: |-
-                            (String) Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
-                            Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
+                            (String) Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under /accounts/{account_id}/workers/workers/{worker_id}/versions accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
+                            Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under `/accounts/{account_id}/workers/workers/{worker_id}/versions` accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
                           type: string
                         workflowName:
                           description: |-
@@ -1382,9 +1432,9 @@ spec:
                     type: array
                   bindingsInherit:
                     description: |-
-                      (String) When set to "strict", the upload will fail if any inherit type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+                      (String) When set to "strict", the upload will fail with error 10057 if any inherit type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
                       Available values: "strict".
-                      When set to "strict", the upload will fail if any `inherit` type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+                      When set to "strict", the upload will fail with error 10057 if any `inherit` type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
                       Available values: "strict".
                     type: string
                   bodyPart:
@@ -1415,6 +1465,24 @@ spec:
                           (Boolean) Whether caching is enabled for this Worker.
                           Whether caching is enabled for this Worker.
                         type: boolean
+                    type: object
+                  codeUpdateStrategy:
+                    description: (Attributes) Choose whether to apply Durable Object
+                      code updates immediately or defer them. When omitted, the default
+                      strategy applies. (see below for nested schema)
+                    properties:
+                      maxDelay:
+                        description: |-
+                          (Number) Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+                          Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+                        type: number
+                      mode:
+                        description: |-
+                          (String) Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
+                          Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
+                        type: string
                     type: object
                   compatibilityDate:
                     description: |-
@@ -1789,9 +1857,11 @@ spec:
                     properties:
                       mode:
                         description: |-
-                          (String) Enables Smart Placement.
-                          Available values: "smart", "targeted".
+                          (String) Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
                           Enables [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
+
+                          Targeted placement mode.
                           Available values: "smart", "targeted".
                         type: string
                     type: object
@@ -2115,9 +2185,9 @@ spec:
                           type: string
                         jurisdiction:
                           description: |-
-                            high".
+                            high", "us".
                             The [jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/#jurisdictional-restrictions) of the R2 bucket.
-                            Available values: "eu", "fedramp", "fedramp-high".
+                            Available values: "eu", "fedramp", "fedramp-high", "us".
                           type: string
                         name:
                           description: |-
@@ -2276,8 +2346,8 @@ spec:
                           x-kubernetes-list-type: set
                         versionId:
                           description: |-
-                            (String) Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
-                            Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
+                            (String) Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under /accounts/{account_id}/workers/workers/{worker_id}/versions accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
+                            Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under `/accounts/{account_id}/workers/workers/{worker_id}/versions` accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
                           type: string
                         workflowName:
                           description: |-
@@ -2288,9 +2358,9 @@ spec:
                     type: array
                   bindingsInherit:
                     description: |-
-                      (String) When set to "strict", the upload will fail if any inherit type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+                      (String) When set to "strict", the upload will fail with error 10057 if any inherit type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
                       Available values: "strict".
-                      When set to "strict", the upload will fail if any `inherit` type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+                      When set to "strict", the upload will fail with error 10057 if any `inherit` type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
                       Available values: "strict".
                     type: string
                   bodyPart:
@@ -2321,6 +2391,24 @@ spec:
                           (Boolean) Whether caching is enabled for this Worker.
                           Whether caching is enabled for this Worker.
                         type: boolean
+                    type: object
+                  codeUpdateStrategy:
+                    description: (Attributes) Choose whether to apply Durable Object
+                      code updates immediately or defer them. When omitted, the default
+                      strategy applies. (see below for nested schema)
+                    properties:
+                      maxDelay:
+                        description: |-
+                          (Number) Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+                          Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+                        type: number
+                      mode:
+                        description: |-
+                          (String) Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
+                          Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
+                        type: string
                     type: object
                   compatibilityDate:
                     description: |-
@@ -2781,9 +2869,11 @@ spec:
                         type: string
                       mode:
                         description: |-
-                          (String) Enables Smart Placement.
-                          Available values: "smart", "targeted".
+                          (String) Apply Durable Object code updates immediately.
+                          Available values: "immediate", "deferred".
                           Enables [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
+
+                          Targeted placement mode.
                           Available values: "smart", "targeted".
                         type: string
                       region:
@@ -2930,6 +3020,10 @@ spec:
                   it can not recover from without human intervention.
                 format: int64
                 type: integer
+              resolvedArtifactDigest:
+                description: ResolvedArtifactDigest identifies the fetched bundle,
+                  not deployment health.
+                type: string
             type: object
         required:
         - spec

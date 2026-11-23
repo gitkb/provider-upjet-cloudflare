@@ -15,6 +15,14 @@ import (
 
 type ScriptSubdomainInitParameters struct {
 
+	// Reference to a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationRef *v2.NamespacedReference `json:"accessApplicationRef,omitempty" tf:"-"`
+
+	// Selector for a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationSelector *v2.NamespacedSelector `json:"accessApplicationSelector,omitempty" tf:"-"`
+
 	// (String) Identifier.
 	// Identifier.
 	AccountID *string `json:"accountId,omitempty" tf:"account_id,omitempty"`
@@ -29,6 +37,10 @@ type ScriptSubdomainInitParameters struct {
 
 	// (String) Name of the script.
 	// Name of the script.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustAccessApplication
+	// +crossplane:generate:reference:extractor=github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()
+	// +crossplane:generate:reference:refFieldName=AccessApplicationRef
+	// +crossplane:generate:reference:selectorFieldName=AccessApplicationSelector
 	ScriptName *string `json:"scriptName,omitempty" tf:"script_name,omitempty"`
 }
 
@@ -56,6 +68,14 @@ type ScriptSubdomainObservation struct {
 
 type ScriptSubdomainParameters struct {
 
+	// Reference to a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationRef *v2.NamespacedReference `json:"accessApplicationRef,omitempty" tf:"-"`
+
+	// Selector for a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationSelector *v2.NamespacedSelector `json:"accessApplicationSelector,omitempty" tf:"-"`
+
 	// (String) Identifier.
 	// Identifier.
 	// +kubebuilder:validation:Optional
@@ -73,6 +93,10 @@ type ScriptSubdomainParameters struct {
 
 	// (String) Name of the script.
 	// Name of the script.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustAccessApplication
+	// +crossplane:generate:reference:extractor=github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()
+	// +crossplane:generate:reference:refFieldName=AccessApplicationRef
+	// +crossplane:generate:reference:selectorFieldName=AccessApplicationSelector
 	// +kubebuilder:validation:Optional
 	ScriptName *string `json:"scriptName,omitempty" tf:"script_name,omitempty"`
 }
@@ -104,7 +128,7 @@ type ScriptSubdomainStatus struct {
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
-// ScriptSubdomain is the Schema for the ScriptSubdomains API. Accepted Permissions Workers Scripts ReadWorkers Scripts WriteWorkers Tail Read
+// ScriptSubdomain is the Schema for the ScriptSubdomains API. Accepted Permissions Individual Workers AdminIndividual Workers Content Read-OnlyIndividual Workers EditorIndividual Workers Metadata Read-OnlyWorkers AdminWorkers Content Read-OnlyWorkers EditorWorkers Metadata Read-OnlyWorkers Scripts ReadWorkers Scripts WriteWorkers Tail Read
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
@@ -115,7 +139,6 @@ type ScriptSubdomain struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.accountId) || (has(self.initProvider) && has(self.initProvider.accountId))",message="spec.forProvider.accountId is a required parameter"
 	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.enabled) || (has(self.initProvider) && has(self.initProvider.enabled))",message="spec.forProvider.enabled is a required parameter"
-	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.scriptName) || (has(self.initProvider) && has(self.initProvider.scriptName))",message="spec.forProvider.scriptName is a required parameter"
 	Spec   ScriptSubdomainSpec   `json:"spec"`
 	Status ScriptSubdomainStatus `json:"status,omitempty"`
 }

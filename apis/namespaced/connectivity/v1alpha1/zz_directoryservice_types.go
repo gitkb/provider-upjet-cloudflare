@@ -38,7 +38,7 @@ type DirectoryServiceInitParameters struct {
 	// (Number)
 	TCPPort *float64 `json:"tcpPort,omitempty" tf:"tcp_port,omitempty"`
 
-	// (Attributes) TLS settings for a connectivity service.
+	// (Attributes) TLS settings for a connectivity service. (see below for nested schema)
 	TLSSettings *TLSSettingsInitParameters `json:"tlsSettings,omitempty" tf:"tls_settings,omitempty"`
 
 	// (String) Available values: "tcp", "http".
@@ -80,7 +80,7 @@ type DirectoryServiceObservation struct {
 	// (Number)
 	TCPPort *float64 `json:"tcpPort,omitempty" tf:"tcp_port,omitempty"`
 
-	// (Attributes) TLS settings for a connectivity service.
+	// (Attributes) TLS settings for a connectivity service. (see below for nested schema)
 	TLSSettings *TLSSettingsObservation `json:"tlsSettings,omitempty" tf:"tls_settings,omitempty"`
 
 	// (String) Available values: "tcp", "http".
@@ -123,7 +123,7 @@ type DirectoryServiceParameters struct {
 	// +kubebuilder:validation:Optional
 	TCPPort *float64 `json:"tcpPort,omitempty" tf:"tcp_port,omitempty"`
 
-	// (Attributes) TLS settings for a connectivity service.
+	// (Attributes) TLS settings for a connectivity service. (see below for nested schema)
 	// +kubebuilder:validation:Optional
 	TLSSettings *TLSSettingsParameters `json:"tlsSettings,omitempty" tf:"tls_settings,omitempty"`
 
@@ -195,7 +195,16 @@ type HostParameters struct {
 type NetworkInitParameters struct {
 
 	// (String)
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustTunnelCloudflared
 	TunnelID *string `json:"tunnelId,omitempty" tf:"tunnel_id,omitempty"`
+
+	// Reference to a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDRef *v2.NamespacedReference `json:"tunnelIdRef,omitempty" tf:"-"`
+
+	// Selector for a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDSelector *v2.NamespacedSelector `json:"tunnelIdSelector,omitempty" tf:"-"`
 }
 
 type NetworkObservation struct {
@@ -207,8 +216,17 @@ type NetworkObservation struct {
 type NetworkParameters struct {
 
 	// (String)
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustTunnelCloudflared
 	// +kubebuilder:validation:Optional
-	TunnelID *string `json:"tunnelId" tf:"tunnel_id,omitempty"`
+	TunnelID *string `json:"tunnelId,omitempty" tf:"tunnel_id,omitempty"`
+
+	// Reference to a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDRef *v2.NamespacedReference `json:"tunnelIdRef,omitempty" tf:"-"`
+
+	// Selector for a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDSelector *v2.NamespacedSelector `json:"tunnelIdSelector,omitempty" tf:"-"`
 }
 
 type ResolverNetworkInitParameters struct {
@@ -217,7 +235,16 @@ type ResolverNetworkInitParameters struct {
 	ResolverIps []*string `json:"resolverIps,omitempty" tf:"resolver_ips,omitempty"`
 
 	// (String)
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustTunnelCloudflared
 	TunnelID *string `json:"tunnelId,omitempty" tf:"tunnel_id,omitempty"`
+
+	// Reference to a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDRef *v2.NamespacedReference `json:"tunnelIdRef,omitempty" tf:"-"`
+
+	// Selector for a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDSelector *v2.NamespacedSelector `json:"tunnelIdSelector,omitempty" tf:"-"`
 }
 
 type ResolverNetworkObservation struct {
@@ -236,8 +263,17 @@ type ResolverNetworkParameters struct {
 	ResolverIps []*string `json:"resolverIps,omitempty" tf:"resolver_ips,omitempty"`
 
 	// (String)
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustTunnelCloudflared
 	// +kubebuilder:validation:Optional
-	TunnelID *string `json:"tunnelId" tf:"tunnel_id,omitempty"`
+	TunnelID *string `json:"tunnelId,omitempty" tf:"tunnel_id,omitempty"`
+
+	// Reference to a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDRef *v2.NamespacedReference `json:"tunnelIdRef,omitempty" tf:"-"`
+
+	// Selector for a TrustTunnelCloudflared in zero to populate tunnelId.
+	// +kubebuilder:validation:Optional
+	TunnelIDSelector *v2.NamespacedSelector `json:"tunnelIdSelector,omitempty" tf:"-"`
 }
 
 type TLSSettingsInitParameters struct {
@@ -248,7 +284,18 @@ type TLSSettingsInitParameters struct {
 	// - `"verify_full"` — verify certificate chain and hostname (default)
 	// - `"verify_ca"` — verify certificate chain only, skip hostname check
 	// - `"disabled"` — do not verify the server certificate at all
+	//
+	// `disabled` cannot be combined with `certificate_authority`: a custom CA is
+	// only used to verify the server certificate.
 	CertVerificationMode *string `json:"certVerificationMode,omitempty" tf:"cert_verification_mode,omitempty"`
+
+	// (String) UUID of the custom CA certificate or chain.
+	// UUID of the custom CA certificate or chain.
+	CertificateAuthority *string `json:"certificateAuthority,omitempty" tf:"certificate_authority,omitempty"`
+
+	// (String) UUID of the mTLS client certificate and private key.
+	// UUID of the mTLS client certificate and private key.
+	ClientCertificate *string `json:"clientCertificate,omitempty" tf:"client_certificate,omitempty"`
 }
 
 type TLSSettingsObservation struct {
@@ -259,7 +306,18 @@ type TLSSettingsObservation struct {
 	// - `"verify_full"` — verify certificate chain and hostname (default)
 	// - `"verify_ca"` — verify certificate chain only, skip hostname check
 	// - `"disabled"` — do not verify the server certificate at all
+	//
+	// `disabled` cannot be combined with `certificate_authority`: a custom CA is
+	// only used to verify the server certificate.
 	CertVerificationMode *string `json:"certVerificationMode,omitempty" tf:"cert_verification_mode,omitempty"`
+
+	// (String) UUID of the custom CA certificate or chain.
+	// UUID of the custom CA certificate or chain.
+	CertificateAuthority *string `json:"certificateAuthority,omitempty" tf:"certificate_authority,omitempty"`
+
+	// (String) UUID of the mTLS client certificate and private key.
+	// UUID of the mTLS client certificate and private key.
+	ClientCertificate *string `json:"clientCertificate,omitempty" tf:"client_certificate,omitempty"`
 }
 
 type TLSSettingsParameters struct {
@@ -270,8 +328,21 @@ type TLSSettingsParameters struct {
 	// - `"verify_full"` — verify certificate chain and hostname (default)
 	// - `"verify_ca"` — verify certificate chain only, skip hostname check
 	// - `"disabled"` — do not verify the server certificate at all
+	//
+	// `disabled` cannot be combined with `certificate_authority`: a custom CA is
+	// only used to verify the server certificate.
 	// +kubebuilder:validation:Optional
 	CertVerificationMode *string `json:"certVerificationMode" tf:"cert_verification_mode,omitempty"`
+
+	// (String) UUID of the custom CA certificate or chain.
+	// UUID of the custom CA certificate or chain.
+	// +kubebuilder:validation:Optional
+	CertificateAuthority *string `json:"certificateAuthority,omitempty" tf:"certificate_authority,omitempty"`
+
+	// (String) UUID of the mTLS client certificate and private key.
+	// UUID of the mTLS client certificate and private key.
+	// +kubebuilder:validation:Optional
+	ClientCertificate *string `json:"clientCertificate,omitempty" tf:"client_certificate,omitempty"`
 }
 
 // DirectoryServiceSpec defines the desired state of DirectoryService

@@ -12,6 +12,8 @@ import (
 
 	v2 "github.com/crossplane/crossplane/apis/v2/core/v2"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
+
+	workerartifact "github.com/wildbitca/provider-upjet-cloudflare/apis/workerartifact"
 )
 
 type AssetsInitParameters struct {
@@ -135,9 +137,9 @@ type BindingsInitParameters struct {
 	// JSON data to use.
 	JSON *string `json:"json,omitempty" tf:"json,omitempty"`
 
-	// high".
+	// high", "us".
 	// The [jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/#jurisdictional-restrictions) of the R2 bucket.
-	// Available values: "eu", "fedramp", "fedramp-high".
+	// Available values: "eu", "fedramp", "fedramp-high", "us".
 	Jurisdiction *string `json:"jurisdiction,omitempty" tf:"jurisdiction,omitempty"`
 
 	// encoded key data. Required if format is "raw", "pkcs8", or "spki".
@@ -196,11 +198,29 @@ type BindingsInitParameters struct {
 
 	// (String) Name of Worker to bind to.
 	// Name of Worker to bind to.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/workers/v1alpha1.Script
 	Service *string `json:"service,omitempty" tf:"service,omitempty"`
 
 	// (String) Identifier of the VPC service to bind to.
 	// Identifier of the VPC service to bind to.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/connectivity/v1alpha1.DirectoryService
 	ServiceID *string `json:"serviceId,omitempty" tf:"service_id,omitempty"`
+
+	// Reference to a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDRef *v2.NamespacedReference `json:"serviceIdRef,omitempty" tf:"-"`
+
+	// Selector for a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDSelector *v2.NamespacedSelector `json:"serviceIdSelector,omitempty" tf:"-"`
+
+	// Reference to a Script in workers to populate service.
+	// +kubebuilder:validation:Optional
+	ServiceRef *v2.NamespacedReference `json:"serviceRef,omitempty" tf:"-"`
+
+	// Selector for a Script in workers to populate service.
+	// +kubebuilder:validation:Optional
+	ServiceSelector *v2.NamespacedSelector `json:"serviceSelector,omitempty" tf:"-"`
 
 	// (Attributes) A simple rate limit. (see below for nested schema)
 	Simple *SimpleInitParameters `json:"simple,omitempty" tf:"simple,omitempty"`
@@ -232,8 +252,8 @@ type BindingsInitParameters struct {
 	// +listType=set
 	Usages []*string `json:"usages,omitempty" tf:"usages,omitempty"`
 
-	// (String) Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
-	// Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
+	// (String) Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under /accounts/{account_id}/workers/workers/{worker_id}/versions accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
+	// Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under `/accounts/{account_id}/workers/workers/{worker_id}/versions` accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
 	VersionID *string `json:"versionId,omitempty" tf:"version_id,omitempty"`
 
 	// (String) Name of the Workflow to bind to.
@@ -317,9 +337,9 @@ type BindingsObservation struct {
 	// JSON data to use.
 	JSON *string `json:"json,omitempty" tf:"json,omitempty"`
 
-	// high".
+	// high", "us".
 	// The [jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/#jurisdictional-restrictions) of the R2 bucket.
-	// Available values: "eu", "fedramp", "fedramp-high".
+	// Available values: "eu", "fedramp", "fedramp-high", "us".
 	Jurisdiction *string `json:"jurisdiction,omitempty" tf:"jurisdiction,omitempty"`
 
 	// (String) A JavaScript variable name for the binding.
@@ -402,8 +422,8 @@ type BindingsObservation struct {
 	// +listType=set
 	Usages []*string `json:"usages,omitempty" tf:"usages,omitempty"`
 
-	// (String) Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
-	// Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
+	// (String) Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under /accounts/{account_id}/workers/workers/{worker_id}/versions accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
+	// Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under `/accounts/{account_id}/workers/workers/{worker_id}/versions` accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
 	VersionID *string `json:"versionId,omitempty" tf:"version_id,omitempty"`
 
 	// (String) Name of the Workflow to bind to.
@@ -505,9 +525,9 @@ type BindingsParameters struct {
 	// +kubebuilder:validation:Optional
 	JSON *string `json:"json,omitempty" tf:"json,omitempty"`
 
-	// high".
+	// high", "us".
 	// The [jurisdiction](https://developers.cloudflare.com/r2/reference/data-location/#jurisdictional-restrictions) of the R2 bucket.
-	// Available values: "eu", "fedramp", "fedramp-high".
+	// Available values: "eu", "fedramp", "fedramp-high", "us".
 	// +kubebuilder:validation:Optional
 	Jurisdiction *string `json:"jurisdiction,omitempty" tf:"jurisdiction,omitempty"`
 
@@ -581,13 +601,31 @@ type BindingsParameters struct {
 
 	// (String) Name of Worker to bind to.
 	// Name of Worker to bind to.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/workers/v1alpha1.Script
 	// +kubebuilder:validation:Optional
 	Service *string `json:"service,omitempty" tf:"service,omitempty"`
 
 	// (String) Identifier of the VPC service to bind to.
 	// Identifier of the VPC service to bind to.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/connectivity/v1alpha1.DirectoryService
 	// +kubebuilder:validation:Optional
 	ServiceID *string `json:"serviceId,omitempty" tf:"service_id,omitempty"`
+
+	// Reference to a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDRef *v2.NamespacedReference `json:"serviceIdRef,omitempty" tf:"-"`
+
+	// Selector for a DirectoryService in connectivity to populate serviceId.
+	// +kubebuilder:validation:Optional
+	ServiceIDSelector *v2.NamespacedSelector `json:"serviceIdSelector,omitempty" tf:"-"`
+
+	// Reference to a Script in workers to populate service.
+	// +kubebuilder:validation:Optional
+	ServiceRef *v2.NamespacedReference `json:"serviceRef,omitempty" tf:"-"`
+
+	// Selector for a Script in workers to populate service.
+	// +kubebuilder:validation:Optional
+	ServiceSelector *v2.NamespacedSelector `json:"serviceSelector,omitempty" tf:"-"`
 
 	// (Attributes) A simple rate limit. (see below for nested schema)
 	// +kubebuilder:validation:Optional
@@ -626,8 +664,8 @@ type BindingsParameters struct {
 	// +listType=set
 	Usages []*string `json:"usages,omitempty" tf:"usages,omitempty"`
 
-	// (String) Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
-	// Identifier for the version to inherit the binding from, which can be the version ID or the literal "latest" to inherit from the latest version. Defaults to inheriting the binding from the latest version.
+	// (String) Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under /accounts/{account_id}/workers/workers/{worker_id}/versions accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
+	// Identifier for the version to inherit the binding from. This can be a version ID, or the literal "latest" to inherit from the most recently uploaded version, which may not be the deployed version. Defaults to "latest". Only the Workers API version endpoints under `/accounts/{account_id}/workers/workers/{worker_id}/versions` accept a version ID. Other endpoints, including script upload and script version upload, accept only "latest" and reject a version ID with error 10057.
 	// +kubebuilder:validation:Optional
 	VersionID *string `json:"versionId,omitempty" tf:"version_id,omitempty"`
 
@@ -1343,9 +1381,11 @@ type PackageDependenciesParameters struct {
 
 type PlacementInitParameters struct {
 
-	// (String) Enables Smart Placement.
-	// Available values: "smart", "targeted".
+	// (String) Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
 	// Enables [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
+	//
+	// Targeted placement mode.
 	// Available values: "smart", "targeted".
 	Mode *string `json:"mode,omitempty" tf:"mode,omitempty"`
 }
@@ -1364,9 +1404,11 @@ type PlacementObservation struct {
 	// The last time the script was analyzed for [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
 	LastAnalyzedAt *string `json:"lastAnalyzedAt,omitempty" tf:"last_analyzed_at,omitempty"`
 
-	// (String) Enables Smart Placement.
-	// Available values: "smart", "targeted".
+	// (String) Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
 	// Enables [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
+	//
+	// Targeted placement mode.
 	// Available values: "smart", "targeted".
 	Mode *string `json:"mode,omitempty" tf:"mode,omitempty"`
 
@@ -1386,9 +1428,11 @@ type PlacementObservation struct {
 
 type PlacementParameters struct {
 
-	// (String) Enables Smart Placement.
-	// Available values: "smart", "targeted".
+	// (String) Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
 	// Enables [Smart Placement](https://developers.cloudflare.com/workers/configuration/smart-placement).
+	//
+	// Targeted placement mode.
 	// Available values: "smart", "targeted".
 	// +kubebuilder:validation:Optional
 	Mode *string `json:"mode,omitempty" tf:"mode,omitempty"`
@@ -1497,7 +1541,56 @@ type ScriptAnnotationsParameters struct {
 	WorkersTag *string `json:"workersTag,omitempty" tf:"workers_tag,omitempty"`
 }
 
+type ScriptCodeUpdateStrategyInitParameters struct {
+
+	// (Number) Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+	// Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+	MaxDelay *float64 `json:"maxDelay,omitempty" tf:"max_delay,omitempty"`
+
+	// (String) Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
+	// Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
+	Mode *string `json:"mode,omitempty" tf:"mode,omitempty"`
+}
+
+type ScriptCodeUpdateStrategyObservation struct {
+
+	// (Number) Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+	// Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+	MaxDelay *float64 `json:"maxDelay,omitempty" tf:"max_delay,omitempty"`
+
+	// (String) Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
+	// Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
+	Mode *string `json:"mode,omitempty" tf:"mode,omitempty"`
+}
+
+type ScriptCodeUpdateStrategyParameters struct {
+
+	// (Number) Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+	// Set the maximum number of seconds to wait before forcing the update. When omitted, the default maximum delay applies.
+	// +kubebuilder:validation:Optional
+	MaxDelay *float64 `json:"maxDelay,omitempty" tf:"max_delay,omitempty"`
+
+	// (String) Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
+	// Apply Durable Object code updates immediately.
+	// Available values: "immediate", "deferred".
+	// +kubebuilder:validation:Optional
+	Mode *string `json:"mode" tf:"mode,omitempty"`
+}
+
 type ScriptInitParameters struct {
+
+	// Reference to a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationRef *v2.NamespacedReference `json:"accessApplicationRef,omitempty" tf:"-"`
+
+	// Selector for a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationSelector *v2.NamespacedSelector `json:"accessApplicationSelector,omitempty" tf:"-"`
 
 	// (String) Identifier.
 	// Identifier.
@@ -1512,9 +1605,9 @@ type ScriptInitParameters struct {
 	// upload-metadata/#bindings. (see below for nested schema)
 	Bindings []BindingsInitParameters `json:"bindings,omitempty" tf:"bindings,omitempty"`
 
-	// (String) When set to "strict", the upload will fail if any inherit type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+	// (String) When set to "strict", the upload will fail with error 10057 if any inherit type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
 	// Available values: "strict".
-	// When set to "strict", the upload will fail if any `inherit` type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+	// When set to "strict", the upload will fail with error 10057 if any `inherit` type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
 	// Available values: "strict".
 	BindingsInherit *string `json:"bindingsInherit,omitempty" tf:"bindings_inherit,omitempty"`
 
@@ -1527,6 +1620,9 @@ type ScriptInitParameters struct {
 	// A type: worker entry in the exports map can override this
 	// value for a single entrypoint. (see below for nested schema)
 	CacheOptions *CacheOptionsInitParameters `json:"cacheOptions,omitempty" tf:"cache_options,omitempty"`
+
+	// (Attributes) Choose whether to apply Durable Object code updates immediately or defer them. When omitted, the default strategy applies. (see below for nested schema)
+	CodeUpdateStrategy *ScriptCodeUpdateStrategyInitParameters `json:"codeUpdateStrategy,omitempty" tf:"code_update_strategy,omitempty"`
 
 	// (String) Date indicating targeted support in the Workers runtime. Backwards incompatible fixes to the runtime following this date will not affect this Worker.
 	// Date indicating targeted support in the Workers runtime. Backwards incompatible fixes to the runtime following this date will not affect this Worker.
@@ -1597,6 +1693,10 @@ type ScriptInitParameters struct {
 
 	// (String) Name of the script, used in URLs and route configuration.
 	// Name of the script, used in URLs and route configuration.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustAccessApplication
+	// +crossplane:generate:reference:extractor=github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()
+	// +crossplane:generate:reference:refFieldName=AccessApplicationRef
+	// +crossplane:generate:reference:selectorFieldName=AccessApplicationSelector
 	ScriptName *string `json:"scriptName,omitempty" tf:"script_name,omitempty"`
 
 	// (Attributes Set) List of Workers that will consume logs from the attached Worker. (see below for nested schema)
@@ -1624,9 +1724,9 @@ type ScriptObservation struct {
 	// upload-metadata/#bindings. (see below for nested schema)
 	Bindings []BindingsObservation `json:"bindings,omitempty" tf:"bindings,omitempty"`
 
-	// (String) When set to "strict", the upload will fail if any inherit type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+	// (String) When set to "strict", the upload will fail with error 10057 if any inherit type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
 	// Available values: "strict".
-	// When set to "strict", the upload will fail if any `inherit` type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+	// When set to "strict", the upload will fail with error 10057 if any `inherit` type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
 	// Available values: "strict".
 	BindingsInherit *string `json:"bindingsInherit,omitempty" tf:"bindings_inherit,omitempty"`
 
@@ -1639,6 +1739,9 @@ type ScriptObservation struct {
 	// A type: worker entry in the exports map can override this
 	// value for a single entrypoint. (see below for nested schema)
 	CacheOptions *CacheOptionsObservation `json:"cacheOptions,omitempty" tf:"cache_options,omitempty"`
+
+	// (Attributes) Choose whether to apply Durable Object code updates immediately or defer them. When omitted, the default strategy applies. (see below for nested schema)
+	CodeUpdateStrategy *ScriptCodeUpdateStrategyObservation `json:"codeUpdateStrategy,omitempty" tf:"code_update_strategy,omitempty"`
 
 	// (String) Date indicating targeted support in the Workers runtime. Backwards incompatible fixes to the runtime following this date will not affect this Worker.
 	// Date indicating targeted support in the Workers runtime. Backwards incompatible fixes to the runtime following this date will not affect this Worker.
@@ -1772,6 +1875,14 @@ type ScriptObservation struct {
 
 type ScriptParameters struct {
 
+	// Reference to a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationRef *v2.NamespacedReference `json:"accessApplicationRef,omitempty" tf:"-"`
+
+	// Selector for a TrustAccessApplication in zero to populate scriptName.
+	// +kubebuilder:validation:Optional
+	AccessApplicationSelector *v2.NamespacedSelector `json:"accessApplicationSelector,omitempty" tf:"-"`
+
 	// (String) Identifier.
 	// Identifier.
 	// +kubebuilder:validation:Optional
@@ -1789,9 +1900,9 @@ type ScriptParameters struct {
 	// +kubebuilder:validation:Optional
 	Bindings []BindingsParameters `json:"bindings,omitempty" tf:"bindings,omitempty"`
 
-	// (String) When set to "strict", the upload will fail if any inherit type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+	// (String) When set to "strict", the upload will fail with error 10057 if any inherit type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
 	// Available values: "strict".
-	// When set to "strict", the upload will fail if any `inherit` type bindings cannot be resolved against the previous version of the Worker. Without this, unresolvable inherit bindings are silently dropped.
+	// When set to "strict", the upload will fail with error 10057 if any `inherit` type bindings cannot be resolved against the latest uploaded version of the Worker, which may not be the deployed version. Without this, unresolvable inherit bindings are silently dropped.
 	// Available values: "strict".
 	// +kubebuilder:validation:Optional
 	BindingsInherit *string `json:"bindingsInherit,omitempty" tf:"bindings_inherit,omitempty"`
@@ -1807,6 +1918,10 @@ type ScriptParameters struct {
 	// value for a single entrypoint. (see below for nested schema)
 	// +kubebuilder:validation:Optional
 	CacheOptions *CacheOptionsParameters `json:"cacheOptions,omitempty" tf:"cache_options,omitempty"`
+
+	// (Attributes) Choose whether to apply Durable Object code updates immediately or defer them. When omitted, the default strategy applies. (see below for nested schema)
+	// +kubebuilder:validation:Optional
+	CodeUpdateStrategy *ScriptCodeUpdateStrategyParameters `json:"codeUpdateStrategy,omitempty" tf:"code_update_strategy,omitempty"`
 
 	// (String) Date indicating targeted support in the Workers runtime. Backwards incompatible fixes to the runtime following this date will not affect this Worker.
 	// Date indicating targeted support in the Workers runtime. Backwards incompatible fixes to the runtime following this date will not affect this Worker.
@@ -1895,6 +2010,10 @@ type ScriptParameters struct {
 
 	// (String) Name of the script, used in URLs and route configuration.
 	// Name of the script, used in URLs and route configuration.
+	// +crossplane:generate:reference:type=github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1.TrustAccessApplication
+	// +crossplane:generate:reference:extractor=github.com/wildbitca/provider-upjet-cloudflare/config/namespaced/preview.AccessWorkerName()
+	// +crossplane:generate:reference:refFieldName=AccessApplicationRef
+	// +crossplane:generate:reference:selectorFieldName=AccessApplicationSelector
 	// +kubebuilder:validation:Optional
 	ScriptName *string `json:"scriptName,omitempty" tf:"script_name,omitempty"`
 
@@ -2281,7 +2400,13 @@ type WorkerParameters struct {
 // ScriptSpec defines the desired state of Script
 type ScriptSpec struct {
 	v2.ManagedResourceSpec `json:",inline"`
-	ForProvider            ScriptParameters `json:"forProvider"`
+
+	// Artifact optionally selects a digest-pinned prebuilt Worker bundle.
+	// +optional
+	Artifact *workerartifact.Source `json:"artifact,omitempty"`
+	// ArtifactFiles is disposable local state and is never written to Kubernetes.
+	ArtifactFiles *workerartifact.Files `json:"-"`
+	ForProvider   ScriptParameters      `json:"forProvider"`
 	// THIS IS A BETA FIELD. It will be honored
 	// unless the Management Policies feature flag is disabled.
 	// InitProvider holds the same fields as ForProvider, with the exception
@@ -2299,13 +2424,16 @@ type ScriptSpec struct {
 type ScriptStatus struct {
 	v2.ManagedResourceStatus `json:",inline"`
 	AtProvider               ScriptObservation `json:"atProvider,omitempty"`
+	// ResolvedArtifactDigest identifies the fetched bundle, not deployment health.
+	// +optional
+	ResolvedArtifactDigest string `json:"resolvedArtifactDigest,omitempty"`
 }
 
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:storageversion
 
-// Script is the Schema for the Scripts API. Accepted Permissions Workers Scripts ReadWorkers Scripts WriteWorkers Tail Read
+// Script is the Schema for the Scripts API. Accepted Permissions Workers Scripts ReadWorkers Scripts WriteIndividual Workers AdminIndividual Workers Content Read-OnlyIndividual Workers EditorWorkers AdminWorkers Content Read-OnlyWorkers EditorWorkers Tail Read
 // +kubebuilder:printcolumn:name="SYNCED",type="string",JSONPath=".status.conditions[?(@.type=='Synced')].status"
 // +kubebuilder:printcolumn:name="READY",type="string",JSONPath=".status.conditions[?(@.type=='Ready')].status"
 // +kubebuilder:printcolumn:name="EXTERNAL-NAME",type="string",JSONPath=".metadata.annotations.crossplane\\.io/external-name"
@@ -2315,7 +2443,6 @@ type Script struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.accountId) || (has(self.initProvider) && has(self.initProvider.accountId))",message="spec.forProvider.accountId is a required parameter"
-	// +kubebuilder:validation:XValidation:rule="!('*' in self.managementPolicies || 'Create' in self.managementPolicies || 'Update' in self.managementPolicies) || has(self.forProvider.scriptName) || (has(self.initProvider) && has(self.initProvider.scriptName))",message="spec.forProvider.scriptName is a required parameter"
 	Spec   ScriptSpec   `json:"spec"`
 	Status ScriptStatus `json:"status,omitempty"`
 }

@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: projects.pages.upjet-cloudflare.m.upbound.io
 spec:
   group: pages.upjet-cloudflare.m.upbound.io
@@ -280,8 +280,10 @@ spec:
                                   type: string
                                 valueSecretRef:
                                   description: |-
-                                    (String, Sensitive) Environment variable value.
-                                    Environment variable value.
+                                    (String, Sensitive) For type: plain_text: Environment variable value.
+                                    For `type: plain_text`: Environment variable value.
+
+                                    For `type: secret_text`: Secret value.
                                   properties:
                                     key:
                                       type: string
@@ -518,8 +520,10 @@ spec:
                                   type: string
                                 valueSecretRef:
                                   description: |-
-                                    (String, Sensitive) Environment variable value.
-                                    Environment variable value.
+                                    (String, Sensitive) For type: plain_text: Environment variable value.
+                                    For `type: plain_text`: Environment variable value.
+
+                                    For `type: secret_text`: Secret value.
                                   properties:
                                     key:
                                       type: string
@@ -1006,8 +1010,10 @@ spec:
                                   type: string
                                 valueSecretRef:
                                   description: |-
-                                    (String, Sensitive) Environment variable value.
-                                    Environment variable value.
+                                    (String, Sensitive) For type: plain_text: Environment variable value.
+                                    For `type: plain_text`: Environment variable value.
+
+                                    For `type: secret_text`: Secret value.
                                   properties:
                                     key:
                                       type: string
@@ -1246,8 +1252,10 @@ spec:
                                   type: string
                                 valueSecretRef:
                                   description: |-
-                                    (String, Sensitive) Environment variable value.
-                                    Environment variable value.
+                                    (String, Sensitive) For type: plain_text: Environment variable value.
+                                    For `type: plain_text`: Environment variable value.
+
+                                    For `type: secret_text`: Secret value.
                                   properties:
                                     key:
                                       type: string

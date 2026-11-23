@@ -4,15 +4,15 @@
 PROJECT_NAME ?= provider-upjet-cloudflare
 PROJECT_REPO ?= github.com/wildbitca/$(PROJECT_NAME)
 
-export OPENTOFU_VERSION ?= 1.13.2
+export OPENTOFU_VERSION ?= 1.13.9
 
 export TERRAFORM_PROVIDER_SOURCE ?= cloudflare/cloudflare
 export TERRAFORM_PROVIDER_REPO ?= https://github.com/cloudflare/terraform-provider-cloudflare
-export TERRAFORM_PROVIDER_VERSION ?= 5.28.1
+export TERRAFORM_PROVIDER_VERSION ?= 5.29.0
 export TERRAFORM_PROVIDER_DOWNLOAD_NAME ?= terraform-provider-cloudflare
 # Cloudflare provider releases are on GitHub; HashiCorp releases URL returns 404 for 5.18+
 export TERRAFORM_PROVIDER_DOWNLOAD_URL_PREFIX ?= https://github.com/cloudflare/terraform-provider-cloudflare/releases/download/v$(TERRAFORM_PROVIDER_VERSION)
-export TERRAFORM_NATIVE_PROVIDER_BINARY ?= terraform-provider-cloudflare_v5.28.1
+export TERRAFORM_NATIVE_PROVIDER_BINARY ?= terraform-provider-cloudflare_v5.29.0
 export TERRAFORM_DOCS_PATH ?= docs/resources
 
 
@@ -41,7 +41,7 @@ NPROCS ?= 1
 # to half the number of CPU cores.
 GO_TEST_PARALLEL := $(shell echo $$(( $(NPROCS) / 2 )))
 
-GOLANGCILINT_VERSION ?= 2.11.4
+GOLANGCILINT_VERSION ?= 2.15.0
 # Provider family sub-packages to build. Set to specific groups to build only those.
 # Provider family sub-packages to build. Use "config" for the family provider,
 # or list individual API groups (e.g., "dns zone r2").
@@ -50,7 +50,7 @@ SUBPACKAGES ?= config
 # Map subpackage names to Go package paths
 GO_STATIC_PACKAGES = $(GO_PROJECT)/cmd/generator $(foreach sp,$(SUBPACKAGES),$(GO_PROJECT)/cmd/provider/$(sp))
 GO_LDFLAGS += -X $(GO_PROJECT)/internal/version.Version=$(VERSION)
-GO_SUBDIRS += cmd internal apis
+GO_SUBDIRS += cmd internal apis config
 -include build/makelib/golang.mk
 
 # ====================================================================================
@@ -348,7 +348,16 @@ help-special: crossplane.help
 vendor: modules.download vendor.patch
 vendor.check: modules.check
 
+# Go builds from vendor/ whenever it exists, so the patched sources are what
+# every target after `make vendor` compiles.
+vendor.mod: modules.download
+	@$(INFO) go mod vendor
+	@$(GO) mod vendor || $(FAIL)
+	@$(OK) go mod vendor
+
 # Apply patches to vendored dependencies after go mod vendor.
 # These patches fix upstream issues that haven't been merged yet.
-vendor.patch:
-	@[ -x patches/apply.sh ] && patches/apply.sh || true
+vendor.patch: vendor.mod
+	@patches/apply.sh || $(FAIL)
+
+.PHONY: vendor.mod vendor.patch

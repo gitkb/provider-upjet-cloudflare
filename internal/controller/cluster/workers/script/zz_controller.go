@@ -23,6 +23,9 @@ import (
 
 	v1alpha1 "github.com/wildbitca/provider-upjet-cloudflare/apis/cluster/workers/v1alpha1"
 	features "github.com/wildbitca/provider-upjet-cloudflare/internal/features"
+
+	workeraccess "github.com/wildbitca/provider-upjet-cloudflare/internal/workeraccess"
+	workerartifactrefs "github.com/wildbitca/provider-upjet-cloudflare/internal/workerartifact"
 )
 
 // SetupWebhookWithManager registers the conversion webhook for Script.
@@ -48,6 +51,10 @@ func SetupGated(mgr ctrl.Manager, o tjcontroller.Options) error {
 func Setup(mgr ctrl.Manager, o tjcontroller.Options) error {
 	name := managed.ControllerName(v1alpha1.Script_GroupVersionKind.String())
 	var initializers managed.InitializerChain
+	initializers = append(initializers, workeraccess.NewInitializer(mgr.GetAPIReader()))
+	for _, i := range o.Provider.Resources["cloudflare_workers_script"].InitializerFns {
+		initializers = append(initializers, i(mgr.GetClient()))
+	}
 	eventHandler := handler.NewEventHandler(handler.WithLogger(o.Logger.WithValues("gvk", v1alpha1.Script_GroupVersionKind)))
 	ac := tjcontroller.NewAPICallbacks(mgr, xpresource.ManagedKind(v1alpha1.Script_GroupVersionKind), tjcontroller.WithEventHandler(eventHandler))
 	opts := []managed.ReconcilerOption{
@@ -59,6 +66,7 @@ func Setup(mgr ctrl.Manager, o tjcontroller.Options) error {
 		managed.WithFinalizer(terraform.NewWorkspaceFinalizer(o.WorkspaceStore, xpresource.NewAPIFinalizer(mgr.GetClient(), managed.FinalizerName))),
 		managed.WithTimeout(3 * time.Minute),
 		managed.WithInitializers(initializers),
+		managed.WithReferenceResolver(workerartifactrefs.NewReferenceResolver(mgr.GetClient())),
 		managed.WithPollInterval(o.PollInterval),
 	}
 	if o.PollJitter != 0 {

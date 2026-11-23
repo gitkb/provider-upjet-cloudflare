@@ -1,0 +1,108 @@
+name: Publish pilot provider packages
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+      - 'Makefile'
+      - 'build'
+      - 'build/**'
+      - 'patches/**'
+      - 'cluster/images/provider-upjet-cloudflare/**'
+      - 'apis/**'
+      - 'config/**'
+      - 'internal/**'
+      - 'cmd/**'
+      - 'package/**'
+      - 'scripts/build-family.sh'
+      - 'scripts/test-family-metadata.py'
+      - '.github/workflows/preview-packages.yml'
+
+permissions: {}
+
+concurrency:
+  group: pilot-packages-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    if: github.repository == 'gitkb/provider-upjet-cloudflare' && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [workers, zero, connectivity]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+          submodules: true
+      - uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069
+      - name: Verify family compatibility metadata
+        run: python3 scripts/test-family-metadata.py
+      - name: Install Crossplane package CLI
+        run: |
+          curl --fail --location --retry 3 --max-time 120 \
+            https://releases.crossplane.io/stable/v2.1.3/bin/linux_amd64/crank -o /tmp/crossplane
+          chmod +x /tmp/crossplane
+      - name: Vendor dependencies and apply upstream fixes
+        run: make vendor vendor.check
+      - name: Build selected family package
+        env:
+          GROUP: ${{ matrix.group }}
+          FAMILY_MIN_VERSION: v0.4.2
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          make build.family FAMILY_SUBPACKAGES="$GROUP" SUBPACKAGES="$GROUP" PLATFORM=linux_amd64 \
+            VERSION="v1.0.4-preview.${HEAD_SHA}" CROSSPLANE_CLI=/tmp/crossplane
+      - uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c
+        with:
+          role-to-assume: arn:aws:iam::065328823520:role/gitkb-ecr-publisher
+          aws-region: us-east-2
+      - name: Publish candidate package to ECR
+        env:
+          GROUP: ${{ matrix.group }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ECR_REGISTRY: 065328823520.dkr.ecr.us-east-2.amazonaws.com
+        run: |
+          set -euo pipefail
+          repository=gitkb/provider-upjet-cloudflare
+          if ! aws ecr describe-repositories --repository-names "$repository" --region us-east-2 >/dev/null 2>&1; then
+            if ! result="$(aws ecr create-repository --repository-name "$repository" --region us-east-2 --image-scanning-configuration scanOnPush=true 2>&1)"; then
+              if [[ "$result" != *"(RepositoryAlreadyExistsException)"* ]]; then
+                printf '%s\n' "$result" >&2
+                exit 1
+              fi
+              aws ecr describe-repositories --repository-names "$repository" --region us-east-2 >/dev/null
+            fi
+          fi
+          aws ecr get-login-password --region us-east-2 | docker login "$ECR_REGISTRY" --username AWS --password-stdin
+          target="$ECR_REGISTRY/$repository:$GROUP-pr-${HEAD_SHA}"
+          /tmp/crossplane xpkg push -f "_output/xpkg/linux_amd64/provider-cloudflare-$GROUP-v1.0.4-preview.$HEAD_SHA.xpkg" "$target"
+          printf '%s\n' "$target" >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish candidate package to GHCR
+        env:
+          GROUP: ${{ matrix.group }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GHCR_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          target="ghcr.io/${GITHUB_REPOSITORY,,}:$GROUP-pr-$HEAD_SHA"
+          /tmp/crossplane xpkg push \
+            -f "_output/xpkg/linux_amd64/provider-cloudflare-$GROUP-v1.0.4-preview.$HEAD_SHA.xpkg" "$target"
+          digest="$(docker buildx imagetools inspect "$target" --format '{{ .Manifest.Digest }}')"
+          [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+          printf '%s@%s\n' "${target%:*}" "$digest" >> "$GITHUB_STEP_SUMMARY"

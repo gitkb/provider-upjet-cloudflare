@@ -3,7 +3,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    controller-gen.kubebuilder.io/version: v0.20.0
+    controller-gen.kubebuilder.io/version: v0.23.0
   name: managements.bot.upjet-cloudflare.m.upbound.io
 spec:
   group: bot.upjet-cloudflare.m.upbound.io
@@ -59,6 +59,46 @@ spec:
             properties:
               forProvider:
                 properties:
+                  aiAgents:
+                    description: (Attributes) Configure blocking behavior for supported
+                      personal AI agents. (see below for nested schema)
+                    properties:
+                      anthropicAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      googleAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      instinct:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      muse:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      openaiAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                    type: object
                   aiBotsMigrationOptOut:
                     description: |-
                       rule updates.
@@ -207,6 +247,46 @@ spec:
                   for example because of an external controller is managing them, like an
                   autoscaler.
                 properties:
+                  aiAgents:
+                    description: (Attributes) Configure blocking behavior for supported
+                      personal AI agents. (see below for nested schema)
+                    properties:
+                      anthropicAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      googleAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      instinct:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      muse:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      openaiAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                    type: object
                   aiBotsMigrationOptOut:
                     description: |-
                       rule updates.
@@ -410,6 +490,46 @@ spec:
             properties:
               atProvider:
                 properties:
+                  aiAgents:
+                    description: (Attributes) Configure blocking behavior for supported
+                      personal AI agents. (see below for nested schema)
+                    properties:
+                      anthropicAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      googleAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      instinct:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      muse:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                      openaiAgent:
+                        description: |-
+                          (String) Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                          Action to apply to one supported personal AI agent.
+                          Available values: "disabled", "block", "only_on_ad_pages".
+                        type: string
+                    type: object
                   aiBotsMigrationOptOut:
                     description: |-
                       rule updates.

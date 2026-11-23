@@ -23,6 +23,8 @@ import (
 
 	v1alpha1 "github.com/wildbitca/provider-upjet-cloudflare/apis/namespaced/zero/v1alpha1"
 	features "github.com/wildbitca/provider-upjet-cloudflare/internal/features"
+
+	statebootstrap "github.com/wildbitca/provider-upjet-cloudflare/internal/statebootstrap"
 )
 
 // SetupWebhookWithManager registers the conversion webhook for TrustAccessApplication.
@@ -51,7 +53,7 @@ func Setup(mgr ctrl.Manager, o tjcontroller.Options) error {
 	eventHandler := handler.NewEventHandler(handler.WithLogger(o.Logger.WithValues("gvk", v1alpha1.TrustAccessApplication_GroupVersionKind)))
 	ac := tjcontroller.NewAPICallbacks(mgr, xpresource.ManagedKind(v1alpha1.TrustAccessApplication_GroupVersionKind), tjcontroller.WithEventHandler(eventHandler))
 	opts := []managed.ReconcilerOption{
-		managed.WithExternalConnecter(tjcontroller.NewConnector(mgr.GetClient(), o.WorkspaceStore, o.SetupFn, o.Provider.Resources["cloudflare_zero_trust_access_application"], tjcontroller.WithLogger(o.Logger), tjcontroller.WithConnectorEventHandler(eventHandler),
+		managed.WithExternalConnecter(tjcontroller.NewConnector(mgr.GetClient(), statebootstrap.NewStore(o.WorkspaceStore), o.SetupFn, o.Provider.Resources["cloudflare_zero_trust_access_application"], tjcontroller.WithLogger(o.Logger), tjcontroller.WithConnectorEventHandler(eventHandler),
 			tjcontroller.WithCallbackProvider(ac),
 		)),
 		managed.WithLogger(o.Logger.WithValues("controller", name)),
